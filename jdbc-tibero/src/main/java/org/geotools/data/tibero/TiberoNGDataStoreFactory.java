@@ -30,27 +30,23 @@ public class TiberoNGDataStoreFactory extends JDBCDataStoreFactory {
     public static final Param DBTYPE = new Param("dbtype", String.class, "Type", true, "tibero");
 
     /** parameter for database instance */
-    public static final Param DATABASE = new Param("database", String.class, "Database", true,
-            "tibero");
+    public static final Param DATABASE = new Param("database", String.class, "Database", true, "tibero");
 
     /** parameter for database port */
     public static final Param PORT = new Param("port", Integer.class, "Port", true, 8629);
 
     /** parameter for database user */
-    public static final Param USER = new Param("user", String.class, "User", true, "tibero");
+    public static final Param USER = new Param("user", String.class, "User", true, "sys");
 
     /** enables using && in bbox queries */
     public static final Param LOOSEBBOX = new Param("Loose bbox", Boolean.class,
             "Perform only primary filter on bbox", false, Boolean.TRUE);
 
     /** parameter that enables estimated extends instead of exact ones */
-    public static final Param ESTIMATED_EXTENTS = new Param("Estimated extends", Boolean.class,
-            "Use the spatial index information to quickly get an estimate of the data bounds",
-            false, Boolean.FALSE);
+    public static final Param ESTIMATED_EXTENTS = new Param("Estimated extends", Boolean.class, "Use the spatial index information to quickly get an estimate of the data bounds", false, Boolean.FALSE);
 
-    /** Wheter a prepared statements based dialect should be used, or not */
-    public static final Param PREPARED_STATEMENTS = new Param("preparedStatements", Boolean.class,
-            "Use prepared statements", false, Boolean.FALSE);
+    /** Whether a prepared statements based dialect should be used, or not */
+    public static final Param PREPARED_STATEMENTS = new Param("preparedStatements", Boolean.class, "Use prepared statements", false, Boolean.TRUE);
 
     @Override
     protected SQLDialect createSQLDialect(JDBCDataStore dataStore) {
@@ -111,8 +107,12 @@ public class TiberoNGDataStoreFactory extends JDBCDataStoreFactory {
 
         // setup the ps dialect if need be
         Boolean usePs = (Boolean) PREPARED_STATEMENTS.lookUp(params);
-        if (Boolean.TRUE.equals(usePs)) {
+        if (usePs == null) {
             dataStore.setSQLDialect(new TiberoPSDialect(dataStore, dialect));
+        } else {
+            if (Boolean.TRUE.equals(usePs)) {
+                dataStore.setSQLDialect(new TiberoPSDialect(dataStore, dialect));
+            }
         }
 
         return dataStore;
@@ -131,6 +131,7 @@ public class TiberoNGDataStoreFactory extends JDBCDataStoreFactory {
         parameters.put(PASSWD.key, PASSWD);
         parameters.put(NAMESPACE.key, NAMESPACE);
         parameters.put(EXPOSE_PK.key, EXPOSE_PK);
+        parameters.put(PREPARED_STATEMENTS.key, PREPARED_STATEMENTS);
         parameters.put(MAXCONN.key, MAXCONN);
         parameters.put(MINCONN.key, MINCONN);
         parameters.put(FETCHSIZE.key, FETCHSIZE);
@@ -161,7 +162,7 @@ public class TiberoNGDataStoreFactory extends JDBCDataStoreFactory {
         String host = (String) HOST.lookUp(params);
         String db = (String) DATABASE.lookUp(params);
         int port = (Integer) PORT.lookUp(params);
-        return "jdbc:tibero:thin:@" + "" + host + ":" + port + "/" + db;
+        return "jdbc:tibero:thin:@" + "" + host + ":" + port + ":" + db;
     }
 
 }
