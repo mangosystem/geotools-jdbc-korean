@@ -88,7 +88,7 @@ public class AltibasePrimaryKeyFinder extends PrimaryKeyFinder {
 
                 StringBuffer sql = new StringBuffer();
                 sql.append("SELECT ");
-                store.getSQLDialect().encodeColumnName(null, columnName, sql);
+                store.getSQLDialect().encodeColumnName(columnName, sql);
                 sql.append(" FROM ");
                 store.getSQLDialect().encodeTableName(databaseSchema, sql);
                 sql.append(".");

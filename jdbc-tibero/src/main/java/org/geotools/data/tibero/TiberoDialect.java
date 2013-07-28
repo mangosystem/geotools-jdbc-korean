@@ -30,7 +30,6 @@ import java.util.Map;
 import java.util.logging.Level;
 
 import org.geotools.data.jdbc.FilterToSQL;
-import org.geotools.factory.Hints;
 import org.geotools.geometry.jts.ReferencedEnvelope;
 import org.geotools.jdbc.BasicSQLDialect;
 import org.geotools.jdbc.ColumnMetadata;
@@ -168,33 +167,17 @@ public class TiberoDialect extends BasicSQLDialect {
     }
 
     @Override
-    public void encodeGeometryColumn(GeometryDescriptor gatt, String prefix, int srid, Hints hints,
-            StringBuffer sql) {
+    public void encodeGeometryColumn(GeometryDescriptor gatt, int srid, StringBuffer sql) {
         sql.append(" ST_ASBINARY(");
-        encodeColumnName(prefix, gatt.getLocalName(), sql);
-        sql.append(")");
-    }
-
-    public void encodeGeometryColumn(GeometryDescriptor gatt, String prefix, int srid,
-            StringBuffer sql) {
-        sql.append(" ST_ASBINARY(");
-        encodeColumnName(prefix, gatt.getLocalName(), sql);
+        encodeColumnName(gatt.getLocalName(), sql);
         sql.append(")");
     }
 
     @Override
     public void encodeGeometryEnvelope(String tableName, String geometryColumn, StringBuffer sql) {
         sql.append(" ST_ASTEXT(ST_ENVELOPE(");
-        encodeColumnName(null, geometryColumn, sql);
+        encodeColumnName(geometryColumn, sql);
         sql.append("))");
-    }
-
-    @Override
-    public void encodeColumnName(String prefix, String raw, StringBuffer sql) {
-        if (prefix != null) {
-            sql.append(ne()).append(prefix).append(ne()).append(".");
-        }
-        sql.append(ne()).append(raw).append(ne());
     }
 
     @Override
@@ -509,7 +492,7 @@ public class TiberoDialect extends BasicSQLDialect {
 
     @Override
     public void encodePrimaryKey(String column, StringBuffer sql) {
-        encodeColumnName(null, column, sql);
+        encodeColumnName(column, sql);
         sql.append(" INTEGER PRIMARY KEY");
     }
 
