@@ -1,8 +1,8 @@
 /*========================================================================
-¿€º∫¿⁄ : Minpa Lee, mapplus@gmail.com, OSGeo Korean Chapter
-º≥  ∏Ì : Tibero Korean ¡¬«•∞Ë µÓ∑œ Ω∫≈©∏≥∆Æ
-proj   : +towgs84=-115.80,474.99,674.11,1.16,-2.31,-1.63,6.43
-WKT    : TOWGS84[-115.80,474.99,674.11,1.16,-2.31,-1.63,6.43]
+ÏûëÏÑ±Ïûê : Minpa Lee, mapplus@gmail.com, OSGeo Korean Chapter
+ÏÑ§  Î™Ö : Tibero Korean Ï¢åÌëúÍ≥Ñ Îì±Î°ù Ïä§ÌÅ¨Î¶ΩÌä∏
+proj : +towgs84=-115.80,474.99,674.11,1.16,-2.31,-1.63,6.43
+WKT  : TOWGS84[-115.80,474.99,674.11,1.16,-2.31,-1.63,6.43]
 
 2096=PROJCS["Korean 1985 / East Belt", GEOGCS["Korean 1985", DATUM["Korean Datum 1985", SPHEROID["Bessel 1841", 6377397.155, 299.1528128, AUTHORITY["EPSG","7004"]], TOWGS84[-115.80,474.99,674.11,1.16,-2.31,-1.63,6.43], AUTHORITY["EPSG","6162"]], PRIMEM["Greenwich", 0.0, AUTHORITY["EPSG","8901"]], UNIT["degree", 0.017453292519943295], AXIS["Geodetic longitude", EAST], AXIS["Geodetic latitude", NORTH], AUTHORITY["EPSG","4162"]], PROJECTION["Transverse_Mercator", AUTHORITY["EPSG","9807"]], PARAMETER["central_meridian", 129.0028902777777], PARAMETER["latitude_of_origin", 38.0], PARAMETER["scale_factor", 1.0], PARAMETER["false_easting", 200000.0], PARAMETER["false_northing", 500000.0], UNIT["m", 1.0], AXIS["Easting", EAST], AXIS["Northing", NORTH], AUTHORITY["EPSG","2096"]]
 2097=PROJCS["Korean 1985 / Central Belt", GEOGCS["Korean 1985", DATUM["Korean Datum 1985", SPHEROID["Bessel 1841", 6377397.155, 299.1528128, AUTHORITY["EPSG","7004"]], TOWGS84[-115.80,474.99,674.11,1.16,-2.31,-1.63,6.43], AUTHORITY["EPSG","6162"]], PRIMEM["Greenwich", 0.0, AUTHORITY["EPSG","8901"]], UNIT["degree", 0.017453292519943295], AXIS["Geodetic longitude", EAST], AXIS["Geodetic latitude", NORTH], AUTHORITY["EPSG","4162"]], PROJECTION["Transverse_Mercator", AUTHORITY["EPSG","9807"]], PARAMETER["central_meridian", 127.00289027777775], PARAMETER["latitude_of_origin", 38.0], PARAMETER["scale_factor", 1.0], PARAMETER["false_easting", 200000.0], PARAMETER["false_northing", 500000.0], UNIT["m", 1.0], AXIS["Easting", EAST], AXIS["Northing", NORTH], AUTHORITY["EPSG","2097"]]

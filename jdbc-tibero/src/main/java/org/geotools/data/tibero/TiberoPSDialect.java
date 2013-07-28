@@ -192,7 +192,7 @@ public class TiberoPSDialect extends PreparedStatementSQLDialect {
     @Override
     public void prepareGeometryValue(Geometry g, int srid, Class binding, StringBuffer sql) {
         if (g != null) {
-            sql.append("GeomFromWKB(?)");
+            sql.append("ST_GEOMFROMWKB(?)");
         } else {
             sql.append("?");
         }

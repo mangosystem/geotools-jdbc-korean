@@ -134,6 +134,10 @@ public class TiberoDialect extends BasicSQLDialect {
             return false;
         } else if (tableName.equalsIgnoreCase("SPATIAL_REF_SYS")) {
             return false;
+        } else if (tableName.equalsIgnoreCase("ALL_GEOMETRY_COLUMNS")) {
+            return false;
+        } else if (tableName.equalsIgnoreCase("USER_GEOMETRY_COLUMNS")) {
+            return false;
         }
 
         // others?
@@ -360,7 +364,7 @@ public class TiberoDialect extends BasicSQLDialect {
         Integer srid = null;
         try {
             if (schemaName == null || schemaName.equalsIgnoreCase("public")) {
-                schemaName = "TIBERO";
+                schemaName = "SYSGIS";
             }
 
             // try geometry_columns
@@ -406,7 +410,7 @@ public class TiberoDialect extends BasicSQLDialect {
         Statement st = cx.createStatement();
         try {
             // SELECT seq_building_fid.NEXTVAL FROM DUAL;
-            String sql = "SELECT " + sequenceName + ".NEXTVAL FROM DUAL";
+            String sql = "SELECT \"" + sequenceName + "\".NEXTVAL FROM DUAL";
 
             dataStore.getLogger().fine(sql);
             ResultSet rs = st.executeQuery(sql);
@@ -565,7 +569,7 @@ public class TiberoDialect extends BasicSQLDialect {
 
                     // create sequence
                     String sequenceName = getSequenceForColumn(schemaName, tableName, "fid", cx);
-                    sql = "DROP SEQUENCE " + sequenceName;
+                    sql = "DROP SEQUENCE \"" + sequenceName + "\"";
                     try {
                         st.execute(sql);
                     } catch (Exception e) {
@@ -575,8 +579,8 @@ public class TiberoDialect extends BasicSQLDialect {
                     // CREATE SEQUENCE seq_building_fid START WITH 1 INCREMENT BY 1 MINVALUE 1
                     // NOMAXVALUE
                     // INSERT INTO SEQTBL VALUES(seq1.NEXTVAL);
-                    sql = "CREATE SEQUENCE " + sequenceName
-                            + " START WITH 1 INCREMENT BY 1 MINVALUE 1 NOMAXVALUE";
+                    sql = "CREATE SEQUENCE \"" + sequenceName
+                            + "\" START WITH 1 INCREMENT BY 1 MINVALUE 1 NOMAXVALUE";
                     LOGGER.fine(sql);
                     st.execute(sql);
                 }
