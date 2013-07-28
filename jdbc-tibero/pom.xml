@@ -21,7 +21,7 @@
   <artifactId>gt-jdbc-tibero</artifactId>
   <packaging>jar</packaging>
   <name>Tibero DataStore</name>    
-  <version>9.3</version>
+  <version>9.4</version>
 
   <description>
 	DataStore for Tibero Database.
@@ -84,12 +84,17 @@
       <artifactId>gt-jdbc</artifactId>
       <version>${project.version}</version>
     </dependency>
-      <dependency>
-        <groupId>junit</groupId>
-        <artifactId>junit</artifactId>
-        <version>4.4</version>
-        <scope>test</scope>
-      </dependency>
+    <dependency>
+      <groupId>org.geotools</groupId>
+      <artifactId>gt-shapefile</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>4.4</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <build>

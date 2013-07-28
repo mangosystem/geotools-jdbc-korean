@@ -147,6 +147,7 @@ public class AltibaseNGDataStoreFactory extends JDBCDataStoreFactory {
         parameters.put(PASSWD.key, PASSWD);
         parameters.put(NAMESPACE.key, NAMESPACE);
         parameters.put(EXPOSE_PK.key, EXPOSE_PK);
+        parameters.put(PREPARED_STATEMENTS.key, PREPARED_STATEMENTS);
         parameters.put(MAXCONN.key, MAXCONN);
         parameters.put(MINCONN.key, MINCONN);
         parameters.put(FETCHSIZE.key, FETCHSIZE);
