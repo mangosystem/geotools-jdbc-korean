@@ -20,7 +20,7 @@
   <artifactId>gt-jdbc-pgdb</artifactId>
   <packaging>jar</packaging>
   <name>ESRI Personal Geodatabase DataStore</name>   
-  <version>9.3</version>
+  <version>8.7</version>
 
   <description>DataStore for ESRI Personal Geodatabase.</description>
   

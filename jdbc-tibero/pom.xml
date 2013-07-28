@@ -21,7 +21,7 @@
   <artifactId>gt-jdbc-tibero</artifactId>
   <packaging>jar</packaging>
   <name>Tibero DataStore</name>    
-  <version>9.3</version>
+  <version>8.7</version>
 
   <description>
 	DataStore for Tibero Database.
