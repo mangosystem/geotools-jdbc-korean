@@ -376,10 +376,6 @@ public class AltibaseDialect extends BasicSQLDialect {
         ResultSet result = null;
         Integer srid = null;
         try {
-            if (schemaName == null || schemaName.equalsIgnoreCase("public")) {
-                schemaName = "SYS";
-            }
-
             // try geometry_columns
             try {
                 String sridSQL = "SELECT SRID FROM GEOMETRY_COLUMNS WHERE " //
@@ -581,7 +577,6 @@ public class AltibaseDialect extends BasicSQLDialect {
     @Override
     public void postCreateTable(String schemaName, SimpleFeatureType featureType, Connection cx)
             throws SQLException {
-        schemaName = schemaName != null ? schemaName : "SYS";
         String tableName = featureType.getName().getLocalPart();
 
         Statement st = null;
@@ -649,7 +644,7 @@ public class AltibaseDialect extends BasicSQLDialect {
 
                     // create sequence
                     String sequenceName = getSequenceForColumn(schemaName, tableName, "fid", cx);
-                    sql = "DROP SEQUENCE " + sequenceName;
+                    sql = "DROP SEQUENCE \"" + sequenceName + "\"";
                     try {
                         st.execute(sql);
                     } catch (Exception e) {
@@ -658,8 +653,8 @@ public class AltibaseDialect extends BasicSQLDialect {
 
                     // CREATE SEQUENCE seq_building_fid START WITH 1 INCREMENT BY 1 MINVALUE 1
                     // NOMAXVALUE
-                    sql = "CREATE SEQUENCE " + sequenceName
-                            + " START WITH 1 INCREMENT BY 1 MINVALUE 1 NOMAXVALUE";
+                    sql = "CREATE SEQUENCE \"" + sequenceName
+                            + "\" START WITH 1 INCREMENT BY 1 MINVALUE 1 NOMAXVALUE";
                     LOGGER.fine(sql);
                     st.execute(sql);
                 }

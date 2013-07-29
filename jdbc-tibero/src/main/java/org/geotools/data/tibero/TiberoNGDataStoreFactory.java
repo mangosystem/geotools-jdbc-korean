@@ -36,7 +36,7 @@ public class TiberoNGDataStoreFactory extends JDBCDataStoreFactory {
     public static final Param PORT = new Param("port", Integer.class, "Port", true, 8629);
 
     /** parameter for database user */
-    public static final Param USER = new Param("user", String.class, "User", true, "sys");
+    public static final Param USER = new Param("user", String.class, "User", true, "sysgis");
 
     /** enables using && in bbox queries */
     public static final Param LOOSEBBOX = new Param("Loose bbox", Boolean.class,

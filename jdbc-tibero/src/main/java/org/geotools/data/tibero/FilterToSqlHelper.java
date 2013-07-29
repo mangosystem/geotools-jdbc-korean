@@ -91,14 +91,15 @@ class FilterToSqlHelper {
 
     void visitDistanceSpatialOperator(DistanceBufferOperator filter, PropertyName property,
             Literal geometry, boolean swapped, Object extraData) throws IOException {
+        // TODO: Tibero does not support DWithin, Beyond
+
         if ((filter instanceof DWithin && !swapped) || (filter instanceof Beyond && swapped)) {
-            out.write("ST_DWithin(");
+            out.write("ST_Distance(");
             property.accept(delegate, extraData);
             out.write(",");
             geometry.accept(delegate, extraData);
-            out.write(",");
+            out.write(") <= ");
             out.write(Double.toString(filter.getDistance()));
-            out.write(")");
         }
 
         if ((filter instanceof DWithin && swapped) || (filter instanceof Beyond && !swapped)) {
@@ -114,7 +115,9 @@ class FilterToSqlHelper {
     void visitComparisonSpatialOperator(BinarySpatialOperator filter, PropertyName property,
             Literal geometry, boolean swapped, Object extraData) throws IOException {
 
-        String closingParenthesis = ")";
+        // NOTE: Tibero Spatial returns TRUE(1) or FALSE(0)
+        String closingParenthesis = ")=1";
+
         if (filter instanceof Equals) {
             out.write("ST_Equals");
         } else if (filter instanceof Disjoint) {

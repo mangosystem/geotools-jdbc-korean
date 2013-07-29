@@ -92,13 +92,14 @@ class FilterToSqlHelper {
     void visitDistanceSpatialOperator(DistanceBufferOperator filter, PropertyName property,
             Literal geometry, boolean swapped, Object extraData) throws IOException {
         if ((filter instanceof DWithin && !swapped) || (filter instanceof Beyond && swapped)) {
+            // NOTE: Kairos Spatial returns TRUE(1) or FALSE(0)
             out.write("ST_DWithin(");
             property.accept(delegate, extraData);
             out.write(",");
             geometry.accept(delegate, extraData);
             out.write(",");
             out.write(Double.toString(filter.getDistance()));
-            out.write(")");
+            out.write(")=1");
         }
 
         if ((filter instanceof DWithin && swapped) || (filter instanceof Beyond && !swapped)) {

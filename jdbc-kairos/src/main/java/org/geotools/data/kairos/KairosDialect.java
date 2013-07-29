@@ -155,7 +155,7 @@ public class KairosDialect extends BasicSQLDialect {
             return false;
         } else if (tableName.equalsIgnoreCase("SPATIAL_REF_SYS")) {
             return false;
-        } else if (tableName.equalsIgnoreCase("sys_plan_view")) {
+        } else if (tableName.equalsIgnoreCase("SYS_PLAN_VIEW")) {
             return false;
         }
 
@@ -347,10 +347,6 @@ public class KairosDialect extends BasicSQLDialect {
         ResultSet result = null;
         Integer srid = null;
         try {
-            if (schemaName == null || schemaName.equalsIgnoreCase("public")) {
-                schemaName = "";
-            }
-
             // try geometry_columns
             try {
                 String sqlStatement = "SELECT SRID FROM GEOMETRY_COLUMNS WHERE " //
@@ -394,9 +390,7 @@ public class KairosDialect extends BasicSQLDialect {
         Statement st = cx.createStatement();
         try {
             String seqName = "seq_" + tableName + "_" + columnName;
-
-            String sql = "SELECT seqname from syssequence WHERE seqname = '";
-            sql += seqName + "'";
+            String sql = "SELECT seqname from syssequence WHERE seqname = '" + seqName + "'";
 
             dataStore.getLogger().fine(sql);
             ResultSet rs = st.executeQuery(sql);
@@ -420,7 +414,7 @@ public class KairosDialect extends BasicSQLDialect {
         Statement st = cx.createStatement();
         try {
             // SELECT seq_building_fid.NEXTVAL FROM DUAL;
-            String sql = "SELECT " + sequenceName + ".NEXTVAL FROM DUAL";
+            String sql = "SELECT \"" + sequenceName + "\".NEXTVAL FROM DUAL";
 
             dataStore.getLogger().fine(sql);
             ResultSet rs = st.executeQuery(sql);
@@ -563,7 +557,6 @@ public class KairosDialect extends BasicSQLDialect {
     @Override
     public void postCreateTable(String schemaName, SimpleFeatureType featureType, Connection cx)
             throws SQLException {
-        schemaName = schemaName != null ? schemaName : "";
         String tableName = featureType.getName().getLocalPart();
 
         Statement st = null;
@@ -626,7 +619,7 @@ public class KairosDialect extends BasicSQLDialect {
                     // Kairos: CREATE [UNIQUE] [RSTREE] INDEX IndexName ON TableName (GeoColName)
                     // ex) CREATE RSTREE INDEX idx_fishnet_geom ON fishnet(geom);
                     sql = "CREATE RSTREE INDEX \"spatial_" + tableName //
-                            + "_" + gd.getLocalName().toLowerCase() + "\"" //
+                            + "_" + gd.getLocalName() + "\"" //
                             + " ON " //
                             + "\"" + tableName + "\"" //
                             + " (" //
@@ -635,12 +628,22 @@ public class KairosDialect extends BasicSQLDialect {
                     st.execute(sql);
 
                     // create sequence
-                    // CREATE SEQUENCE seq_building_fid START WITH 1 INCREMENT BY 1 MINVALUE 1
-                    // NOMAXVALUE
-                    sql = "CREATE SEQUENCE seq_" + tableName //
-                            + "_fid START WITH 1 INCREMENT BY 1 MINVALUE 1 NOMAXVALUE";
-                    LOGGER.fine(sql);
-                    st.execute(sql);
+                    String sequenceName = getSequenceForColumn(schemaName, tableName, "fid", cx);
+                    if (sequenceName != null) {
+                        sql = "DROP SEQUENCE \"" + sequenceName + "\"";
+                        try {
+                            st.execute(sql);
+                        } catch (Exception e) {
+                            LOGGER.fine(e.getMessage());
+                        }
+
+                        // CREATE SEQUENCE seq_building_fid START WITH 1 INCREMENT BY 1 MINVALUE 1
+                        // NOMAXVALUE
+                        sql = "CREATE SEQUENCE \"" + sequenceName
+                                + "\" START WITH 1 INCREMENT BY 1 MINVALUE 1 NOMAXVALUE";
+                        LOGGER.fine(sql);
+                        st.execute(sql);
+                    }
                 }
             }
             cx.commit();
