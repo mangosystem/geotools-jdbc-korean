@@ -363,13 +363,9 @@ public class TiberoDialect extends BasicSQLDialect {
         ResultSet result = null;
         Integer srid = null;
         try {
-            if (schemaName == null || schemaName.equalsIgnoreCase("public")) {
-                schemaName = "SYSGIS";
-            }
-
             // try geometry_columns
             try {
-                String sqlStatement = "SELECT SRID FROM GEOMETRY_COLUMNS WHERE " //
+                String sqlStatement = "SELECT SRID FROM GEOMETRY_COLUMNS_BASE WHERE " //
                         + "F_TABLE_SCHEMA = '" + schemaName + "' " //
                         + "AND F_TABLE_NAME = '" + tableName + "' " //
                         + "AND F_GEOMETRY_COLUMN = '" + columnName + "'";
@@ -506,7 +502,6 @@ public class TiberoDialect extends BasicSQLDialect {
     @Override
     public void postCreateTable(String schemaName, SimpleFeatureType featureType, Connection cx)
             throws SQLException {
-        schemaName = schemaName != null ? schemaName : "SYSGIS";
         String tableName = featureType.getName().getLocalPart();
 
         Statement st = null;
@@ -519,7 +514,7 @@ public class TiberoDialect extends BasicSQLDialect {
                     GeometryDescriptor gd = (GeometryDescriptor) att;
 
                     // lookup or reverse engineer the srid
-                    int srid = 2097;
+                    int srid = 101;   // default value
 
                     if (gd.getUserData().get(JDBCDataStore.JDBC_NATIVE_SRID) != null) {
                         srid = (Integer) gd.getUserData().get(JDBCDataStore.JDBC_NATIVE_SRID);
@@ -547,7 +542,7 @@ public class TiberoDialect extends BasicSQLDialect {
 
                     // register the geometry type, first remove and eventual
                     // leftover, then write out the real one
-                    String sql = "DELETE FROM SYSGIS.GEOMETRY_COLUMNS_BASE"
+                    String sql = "DELETE FROM GEOMETRY_COLUMNS_BASE"
                             + " WHERE F_TABLE_SCHEMA = '" + schemaName + "'" //
                             + " AND F_TABLE_NAME = '" + tableName + "'" //
                             + " AND F_GEOMETRY_COLUMN = '" + gd.getLocalName() + "'";
@@ -555,7 +550,7 @@ public class TiberoDialect extends BasicSQLDialect {
                     LOGGER.fine(sql);
                     st.execute(sql);
 
-                    sql = "INSERT INTO SYSGIS.GEOMETRY_COLUMNS_BASE VALUES (" //
+                    sql = "INSERT INTO GEOMETRY_COLUMNS_BASE VALUES (" //
                             + "'" + schemaName + "'," //
                             + "'" + tableName + "'," //
                             + "'" + gd.getLocalName() + "'," //
@@ -620,13 +615,9 @@ public class TiberoDialect extends BasicSQLDialect {
 
     @Override
     public void applyLimitOffset(StringBuffer sql, int limit, int offset) {
-        if (limit >= 0 && limit < Integer.MAX_VALUE) {
-            sql.append(" LIMIT " + limit);
-            if (offset > 0) {
-                sql.append(" OFFSET " + offset);
-            }
-        } else if (offset > 0) {
-            sql.append(" OFFSET " + offset);
+        // SELECT * FROM EMP WHERE ROWNUM <= 10;
+        if (limit >= 0) {
+            sql.append(" AND ROWNUM <= " + limit);
         }
     }
 
