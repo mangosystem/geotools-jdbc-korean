@@ -37,9 +37,6 @@ public class AltibaseNGDataStoreFactory extends JDBCDataStoreFactory {
     /** parameter for database port */
     public static final Param PORT = new Param("port", Integer.class, "Port", true, 20300);
 
-    /** parameter for database schema */
-    public static final Param SCHEMA = new Param("schema", String.class, "Schema", true, "SYS");
-
     /** parameter for database user */
     public static final Param USER = new Param("user", String.class, "User", true, "sys");
 
