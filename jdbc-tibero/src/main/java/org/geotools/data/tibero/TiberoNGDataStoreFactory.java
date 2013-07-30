@@ -64,7 +64,7 @@ public class TiberoNGDataStoreFactory extends JDBCDataStoreFactory {
     }
 
     public String getDescription() {
-        return "TmaxSoft(tm) Tibero 4.0+ Database";
+        return "Tibero RDBMS 4.0+ Database";
     }
 
     @Override

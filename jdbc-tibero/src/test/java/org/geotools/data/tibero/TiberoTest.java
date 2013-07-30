@@ -78,8 +78,7 @@ public class TiberoTest {
         // upload shapefile firestation admin_sgg events
         DataStore shpStore = getShapefileDataStore("C:/OpenGeoSuite/data/seoul/");
 
-        String typeName = "admin_sgg";
-        SimpleFeatureSource shp_sfs = shpStore.getFeatureSource(typeName);
+        SimpleFeatureSource shp_sfs = shpStore.getFeatureSource("admin_emd");
         System.out.println(shp_sfs.getName().toString() + " = " + shp_sfs.getCount(Query.ALL));
 
         SimpleFeatureSource out = convert(shp_sfs, dataStore);

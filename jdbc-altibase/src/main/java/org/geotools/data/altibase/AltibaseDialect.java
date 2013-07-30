@@ -421,7 +421,8 @@ public class AltibaseDialect extends BasicSQLDialect {
             throws SQLException {
         Statement st = cx.createStatement();
         try {
-            String sql = "SELECT " + sequenceName + ".NEXTVAL FROM DUAL";
+            // SELECT seq_building_fid.NEXTVAL FROM DUAL;
+            String sql = "SELECT \"" + sequenceName + "\".NEXTVAL FROM DUAL";
 
             dataStore.getLogger().fine(sql);
             ResultSet rs = st.executeQuery(sql);

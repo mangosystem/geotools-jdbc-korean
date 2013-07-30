@@ -1,4 +1,4 @@
-Kairos Spatial ?꾩긽 愿怨??곗궛 ?⑥닔?ㅼ? 怨듦컙 媛앹껜?ㅺ컙???꾩긽 愿怨꾨? 寃?ы븯??TRUE(1) ?먮뒗 FALSE(0)瑜?諛섑솚
+Kairos Spatial 
 
 * ?곗씠?곕쿋?댁뒪 ?앹꽦怨???젣
 createdb databaseName [-s initialDBSize] [-g growingDBSize] [-f DBFileSize] [-i indexLogging] [/y]
