@@ -1,0 +1,65 @@
+
+=====================================================
+기본 아이디어
+=====================================================
+CUBRID에 보면 [Java 저장 함수/프로시저] 로 사용자 정의 함수를 만들 수 있으므로 이를 활용할 수 있음
+
+http://www.cubrid.com/online_manual/91/sql/jsp.html
+http://www.cubrid.com/manual/91/sql/jsp.html
+http://www.onspatial.com/2011/07/geoserverx-y.html
+
+SELECT ST_SetSRID(ST_Point(lon, lat),4326) as the_geom, rgn, t_year, et, em, loc FROM earthquake
+
+따라서, ST_POINT 및 ST_SETSRID 두개의 함수만 구현하면 될 것 같다.
+
+=====================================================
+CUBRID Tips
+=====================================================
+
+CUBRID는 Spatial Extension을 지원하지 않으나, 
+GeoServer의 View를 이용하여 X, Y 필드를 포함한 테이블에 대해서 지도화가 가능하며, 
+GeoServer의 Heatmap transformation 등을 이용해서 시각화 분석에 활용이 가능할 듯
+
+http://www.cubrid.com/online_manual/91/api/jdbc.html
+
+Class.forName("cubrid.jdbc.driver.CUBRIDDriver");
+URL=jdbc:CUBRID:127.0.0.1:31000:demodb:::?queryTimeout=1&charSet=utf-8
+
+jdbc:cubrid:<host>:<port>:<db-name>:[user-id]:[password]:[?<property> [& <property>]]
+<property> ::= altHosts=<alternative_hosts>
+             | rcTime=<second>
+             | loadBalance=<bool_type>
+             | connectTimeout=<second>
+             | queryTimeout=<second>
+             | charSet=<character_set>
+             | zeroDateTimeBehavior=<behavior_type>
+             | logFile=<file_name>
+             | logOnException=<bool_type>
+             | logSlowQueries=<bool_type>&slowQueryThresholdMillis=<millisecond>
+
+altHosts : HA 환경에서 장애 시 fail-over할 하나 이상의 standby 브로커의 호스트 IP와 접속 포트이다.
+rcTime : 첫 번째로 접속했던 브로커에 장애가 발생한 이후 altHosts 에 명시한 브로커로 접속한다(failover). 이후, rcTime만큼 시간이 경과할 때마다 원래의 브로커에 재접속을 시도한다(기본값 600초). 입력 방법은 아래 URL 예제를 참고한다.
+loadBalance : 이 값이 true면 응용 프로그램이 메인 호스트와 althosts에 지정한 호스트들에 랜덤한 순서로 연결한다(기본값: false).
+connectTimeout : 데이터베이스 접속에 대한 타임아웃 시간을 초 단위로 설정한다(기본값: 0). DriverManger.setLoginTimeout () 메서드로 설정할 수도 있으나, 연결 URL에 이 값을 설정하면 메서드로 설정한 값은 무시된다.
+queryTimeout : 질의 수행에 대한 타임아웃 시간을 초 단위로 설정한다(기본값: 0, 무제한). 이 값은 DriverManger.setQueryTimeout () 메서드에 의해 변경될 수 있다.
+charSet : 접속하고자 하는 DB의 문자셋(charSet)이다.
+zeroDateTimeBehavior : JDBC에서는 java.sql.Date 형 객체에 날짜와 시간 값이 모두 0인 값을 허용하지 않으므로 이 값을 출력해야 할 때 어떻게 처리할 것인지를 정하는 속성. 기본 동작은 exception 이다. 날짜와 시간 값이 모두 0인 값에 대한 설명은 날짜/시간 데이터 타입 을 참고한다.
+설정값에 따른 동작은 다음과 같다.
+    exception : 기본 동작. SQLException 예외로 처리한다.
+    round : 반환할 타입의 최소값으로 변환한다.
+    convertToNull : NULL 로 변환한다.
+logFile : 디버깅용 로그 파일 이름(기본값: cubrid_jdbc.log). 별도의 경로 설정이 없으면 응용 프로그램을 실행하는 위치에 저장된다.
+logOnException : 디버깅용 예외 처리 로깅 여부(기본값: false)
+logSlowQueries : 디버깅용 슬로우 쿼리 로깅 여부(기본값: false)
+slowQueryThresholdMillis : 디버깅용 슬로우 쿼리 로깅 시 슬로우 쿼리 제한 시간(기본값: 60000). 단위는 밀리 초이다.
+
+=====================================================
+GeoTools 연결방법
+=====================================================
+Map<String, Object> params = new HashMap<String, Object>();
+params.put(JDBCDataStoreFactory.DBTYPE.key, "cubrid");
+params.put(JDBCDataStoreFactory.HOST.key, "localhost");
+params.put(JDBCDataStoreFactory.DATABASE.key, "demodb");
+params.put(JDBCDataStoreFactory.PORT.key, "8001");
+params.put(JDBCDataStoreFactory.USER.key, "admin");
+params.put(JDBCDataStoreFactory.PASSWD.key, "xxxx");

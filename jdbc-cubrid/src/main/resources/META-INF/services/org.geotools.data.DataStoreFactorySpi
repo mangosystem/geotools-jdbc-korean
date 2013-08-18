@@ -1,0 +1,2 @@
+org.geotools.data.cubrid.CubridNGDataStoreFactory
+org.geotools.data.cubrid.CubridNGJNDIDataStoreFactory
