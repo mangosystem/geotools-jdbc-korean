@@ -35,10 +35,13 @@ public class CubridNGDataStoreFactory extends JDBCDataStoreFactory {
     public static final Param DATABASE = new Param("database", String.class, "Database", false, "demodb");
 
     /** parameter for database port */
-    public static final Param PORT = new Param("port", Integer.class, "Port", true, 8001);
+    public static final Param PORT = new Param("port", Integer.class, "Port", true, 33000);
 
     /** parameter for database user */
-    public static final Param USER = new Param("user", String.class, "User", true, "admin");
+    public static final Param USER = new Param("user", String.class, "User", true, "dba");
+
+    /** parameter for database user */
+    public static final Param PASSWD = new Param("passwd", String.class, "Password", true, "");
 
     /** enables using && in bbox queries */
     public static final Param LOOSEBBOX = new Param("Loose bbox", Boolean.class, "Perform only primary filter on bbox", false, Boolean.TRUE);
@@ -131,8 +134,8 @@ public class CubridNGDataStoreFactory extends JDBCDataStoreFactory {
     @SuppressWarnings("unchecked")
     @Override
     protected void setupParameters(Map parameters) {
-        // NOTE: when adding parameters here remember to add them to AltibaseNGJNDIDataStoreFactory
         super.setupParameters(parameters);
+        
         parameters.put(DBTYPE.key, DBTYPE);
         parameters.put(HOST.key, HOST);
         parameters.put(PORT.key, PORT);
@@ -153,7 +156,7 @@ public class CubridNGDataStoreFactory extends JDBCDataStoreFactory {
 
     @Override
     protected String getValidationQuery() {
-        return "SELECT SYSDATE FROM DUAL";
+        return "select SYS_DATE from db_root LIMIT 1";
     }
 
     @Override
@@ -174,7 +177,7 @@ public class CubridNGDataStoreFactory extends JDBCDataStoreFactory {
         String db = (String) DATABASE.lookUp(params);
 
         // jdbc:cubrid:<host>:<port>:<db-name>:[user-id]:[password]:[?<property> [& <property>]]
-        return "jdbc:cubrid" + "://" + host + ":" + port + "/" + db;
+        return "jdbc:cubrid" + ":" + host + ":" + port + ":" + db + ":::";
     }
 
 }

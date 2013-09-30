@@ -23,5 +23,6 @@
 			<attribute name="maven.pomderived" value="true"/>
 		</attributes>
 	</classpathentry>
+	<classpathentry kind="lib" path="E:/server/CUBRID/jdbc/cubrid_jdbc.jar"/>
 	<classpathentry kind="output" path="target/classes"/>
 </classpath>

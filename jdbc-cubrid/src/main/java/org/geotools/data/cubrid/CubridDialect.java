@@ -42,7 +42,6 @@ import org.geotools.util.Version;
 import org.opengis.feature.simple.SimpleFeatureType;
 import org.opengis.feature.type.AttributeDescriptor;
 import org.opengis.feature.type.GeometryDescriptor;
-import org.opengis.feature.type.GeometryType;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
 
 import com.vividsolutions.jts.geom.Envelope;
@@ -502,40 +501,6 @@ public class CubridDialect extends BasicSQLDialect {
         sql.append(" INTEGER PRIMARY KEY");
     }
 
-    @Override
-    public void encodePostColumnCreateTable(AttributeDescriptor att, StringBuffer sql) {
-        if (att.getType() instanceof GeometryType) {
-            Class<?> origBinding = att.getType().getBinding();
-
-            // altibase.properties
-            // #=================================================================
-            // # ST Object Buffer Size Properties
-            // #=================================================================
-            // ST_OBJECT_BUFFER_SIZE = 32000 # default : 32000 ==> 1,523
-            // # min : 32000
-            // # max : 104857600 ==> 4,993,219
-
-            // altibase.properties
-            Integer fieldSize = 32000;
-            // Insert Error: Invalid length of the data type : WKB Geometry Size
-            if (origBinding.isAssignableFrom(MultiPolygon.class)) {
-                fieldSize = 32000 * 10;
-            } else if (origBinding.isAssignableFrom(Polygon.class)) {
-                fieldSize = 32000 * 10;
-            } else if (origBinding.isAssignableFrom(MultiLineString.class)) {
-                fieldSize = 32000 * 2;
-            } else if (origBinding.isAssignableFrom(LineString.class)) {
-                fieldSize = 32000;
-            } else if (origBinding.isAssignableFrom(MultiPoint.class)) {
-                fieldSize = 32000;
-            } else if (origBinding.isAssignableFrom(Point.class)) {
-                fieldSize = 100;
-            }
-
-            sql.append("(").append(fieldSize).append(")");
-        }
-    }
-
     Map<String, Integer> getColumnMeta(DatabaseMetaData metadata, String schemaName,
             String tableName) throws SQLException {
         // Column: TABLE_CAT: Value: null
@@ -768,7 +733,7 @@ public class CubridDialect extends BasicSQLDialect {
     }
 
     boolean supportsGeography(Connection cx) throws SQLException {
-        return false; // getVersion(cx).compareTo(V_9_1_0) >= 0;
+        return false;
     }
 
 }
