@@ -20,7 +20,7 @@
   <artifactId>gt-jdbc-cubrid</artifactId>
   <packaging>jar</packaging>
   <name>CUBRID DataStore</name>   
-  <version>10.0</version>
+  <version>10.4</version>
 
   <description>DataStore for CUBRID Database.</description>
   

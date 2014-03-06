@@ -20,7 +20,7 @@
   <artifactId>gt-ngi</artifactId>
   <packaging>jar</packaging>
   <name>NGI DataStore</name>   
-  <version>10.0</version>
+  <version>10.4</version>
 
   <description>DataStore for NGI Geodatabase.</description>
   
