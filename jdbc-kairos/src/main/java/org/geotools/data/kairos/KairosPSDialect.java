@@ -196,7 +196,6 @@ public class KairosPSDialect extends PreparedStatementSQLDialect {
     }
 
     @SuppressWarnings("rawtypes")
-    @Override
     public void prepareGeometryValue(Geometry g, int srid, Class binding, StringBuffer sql) {
         if (g != null) {
             sql.append("ST_GEOMFROMWKB(?, " + srid + ")");   // yhl, 20131206
@@ -207,8 +206,8 @@ public class KairosPSDialect extends PreparedStatementSQLDialect {
 
     @SuppressWarnings("rawtypes")
     @Override
-    public void setGeometryValue(Geometry g, int srid, Class binding, PreparedStatement ps,
-            int column) throws SQLException {
+    public void setGeometryValue(Geometry g, int dimension, int srid, Class binding,
+            PreparedStatement ps, int column) throws SQLException {
         if (g != null) {
             if (g instanceof LinearRing) {
                 // WKT does not support linear rings
