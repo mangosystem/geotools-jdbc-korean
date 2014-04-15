@@ -20,7 +20,7 @@
   <artifactId>gt-jdbc-altibase</artifactId>
   <packaging>jar</packaging>
   <name>Altibase DataStore</name>   
-  <version>10.5</version>
+  <version>10.6</version>
 
   <description>DataStore for Altibase Database.</description>
   
