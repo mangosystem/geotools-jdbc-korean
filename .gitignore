@@ -1,2 +1,9 @@
+.project
+.classpath
+.settings
+.metadata
 target
+*.patch
+*.class
 *.bat
+/.metadata/
