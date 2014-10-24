@@ -605,7 +605,8 @@ public class TiberoDialect extends BasicSQLDialect {
     }
 
     @Override
-    public void encodeGeometryValue(Geometry value, int srid, StringBuffer sql) throws IOException {
+    public void encodeGeometryValue(Geometry value, int dimension, int srid, StringBuffer sql)
+            throws IOException {
         if (value == null) {
             sql.append("NULL");
         } else {
@@ -614,7 +615,6 @@ public class TiberoDialect extends BasicSQLDialect {
                 value = value.getFactory().createLineString(
                         ((LinearRing) value).getCoordinateSequence());
             }
-
             sql.append("ST_GEOMFROMTEXT('" + value.toText() + "')");
         }
     }

@@ -653,7 +653,8 @@ public class KairosDialect extends BasicSQLDialect {
     }
 
     @Override
-    public void encodeGeometryValue(Geometry value, int srid, StringBuffer sql) throws IOException {
+    public void encodeGeometryValue(Geometry value, int dimension, int srid, StringBuffer sql)
+            throws IOException {
         if (value == null) {
             sql.append("NULL");
         } else {
@@ -662,7 +663,6 @@ public class KairosDialect extends BasicSQLDialect {
                 value = value.getFactory().createLineString(
                         ((LinearRing) value).getCoordinateSequence());
             }
-
             // KAIROS ERROR: ERROR(43003) WKT string is too long. Max length is 4KB
             sql.append("ST_GeomFromText('" + value.toText() + "', " + srid + ")");
         }
