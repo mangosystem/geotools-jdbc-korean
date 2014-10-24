@@ -196,7 +196,6 @@ public class AltibasePSDialect extends PreparedStatementSQLDialect {
     }
 
     @SuppressWarnings("rawtypes")
-    @Override
     public void prepareGeometryValue(Geometry g, int srid, Class binding, StringBuffer sql) {
         if (g != null) {
             sql.append("GeomFromWKB(?)");
@@ -207,19 +206,17 @@ public class AltibasePSDialect extends PreparedStatementSQLDialect {
 
     @SuppressWarnings("rawtypes")
     @Override
-    public void setGeometryValue(Geometry g, int srid, Class binding, PreparedStatement ps,
-            int column) throws SQLException {
+    public void setGeometryValue(Geometry g, int dimension, int srid, Class binding,
+            PreparedStatement ps, int column) throws SQLException {
         if (g != null) {
             if (g instanceof LinearRing) {
                 // WKT does not support linear rings
                 g = g.getFactory().createLineString(((LinearRing) g).getCoordinateSequence());
             }
-
             if ((g instanceof Polygon || g instanceof MultiPolygon) && !g.isValid()) {
                 g = g.buffer(0);
                 LOGGER.warning("Input geometry is not Valid!");
             }
-
             byte[] bytes = wkbWriter.write(g);
             ps.setBytes(column, bytes);
         } else {

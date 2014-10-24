@@ -667,7 +667,8 @@ public class AltibaseDialect extends BasicSQLDialect {
     }
 
     @Override
-    public void encodeGeometryValue(Geometry value, int srid, StringBuffer sql) throws IOException {
+    public void encodeGeometryValue(Geometry value, int dimension, int srid, StringBuffer sql)
+            throws IOException {
         if (value == null) {
             sql.append("NULL");
         } else {
@@ -676,7 +677,6 @@ public class AltibaseDialect extends BasicSQLDialect {
                 value = value.getFactory().createLineString(
                         ((LinearRing) value).getCoordinateSequence());
             }
-
             // Altibase 에서 WKT는 32K 까지만 지원
             sql.append(" GEOMFROMTEXT('" + value.toText() + "')");
         }
