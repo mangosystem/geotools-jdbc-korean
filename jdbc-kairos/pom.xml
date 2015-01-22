@@ -21,7 +21,7 @@
   <artifactId>gt-jdbc-kairos</artifactId>
   <packaging>jar</packaging>
   <name>Kairos DataStore</name>    
-  <version>12.1</version>
+  <version>12.2</version>
 
   <description>
 	DataStore for Kairos Database.
