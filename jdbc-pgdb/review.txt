@@ -25,14 +25,13 @@ Compatibility
 ==============
  - GeoTools 2.7.x
  - GeoTools 8.x
- - 모두 지원
+ - GeoTools 9.x
 
 Overview
 =========
 
 ESRI Personal Geodatabase (PGDB) is an MS Access database (.mdb) file with some predefined tables and table structures. 
 A PGDB can store multiple vector and raster layers with attributes, upto a total size of 2 GiB.
-
 
 Constraints
 ===========
@@ -67,7 +66,6 @@ Constraints
     
     // or 2
     dataStore = DataStoreFinder.getDataStore(params);
-    
     
     List<Name> typeNames = dataStore.getNames();
     for (Name typeName : typeNames) {

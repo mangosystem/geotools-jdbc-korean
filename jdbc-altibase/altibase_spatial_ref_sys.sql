@@ -1,6 +1,6 @@
 /*========================================================================
-작성자 : Minpa Lee, mapplus@gmail.com, OSGeo Korean Chapter
-설  명 : PostGIS Korean 좌표계 등록 스크립트
+Author : Minpa Lee, mapplus@gmail.com, OSGeo Korean Chapter
+Desc   :  Korean Coordinate Reference Systems for Tibero
 proj   : +towgs84=-115.80,474.99,674.11,1.16,-2.31,-1.63,6.43
 WKT    : TOWGS84[-115.80,474.99,674.11,1.16,-2.31,-1.63,6.43]
 

@@ -663,7 +663,6 @@ public class KairosDialect extends BasicSQLDialect {
                 value = value.getFactory().createLineString(
                         ((LinearRing) value).getCoordinateSequence());
             }
-
             // KAIROS ERROR: ERROR(43003) WKT string is too long. Max length is 4KB
             sql.append("ST_GeomFromText('" + value.toText() + "', " + srid + ")");
         }

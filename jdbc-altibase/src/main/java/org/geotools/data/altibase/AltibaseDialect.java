@@ -421,7 +421,8 @@ public class AltibaseDialect extends BasicSQLDialect {
             throws SQLException {
         Statement st = cx.createStatement();
         try {
-            String sql = "SELECT " + sequenceName + ".NEXTVAL FROM DUAL";
+            // SELECT seq_building_fid.NEXTVAL FROM DUAL;
+            String sql = "SELECT \"" + sequenceName + "\".NEXTVAL FROM DUAL";
 
             dataStore.getLogger().fine(sql);
             ResultSet rs = st.executeQuery(sql);
@@ -676,7 +677,6 @@ public class AltibaseDialect extends BasicSQLDialect {
                 value = value.getFactory().createLineString(
                         ((LinearRing) value).getCoordinateSequence());
             }
-
             // Altibase 에서 WKT는 32K 까지만 지원
             sql.append(" GEOMFROMTEXT('" + value.toText() + "')");
         }

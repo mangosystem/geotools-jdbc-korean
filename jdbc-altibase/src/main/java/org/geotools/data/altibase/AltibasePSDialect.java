@@ -221,12 +221,10 @@ public class AltibasePSDialect extends PreparedStatementSQLDialect {
                 // WKT does not support linear rings
                 g = g.getFactory().createLineString(((LinearRing) g).getCoordinateSequence());
             }
-
             if ((g instanceof Polygon || g instanceof MultiPolygon) && !g.isValid()) {
                 g = g.buffer(0);
                 LOGGER.warning("Input geometry is not Valid!");
             }
-
             byte[] bytes = wkbWriter.write(g);
             ps.setBytes(column, bytes);
         } else {
