@@ -23,9 +23,11 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
+import java.util.List;
 import java.util.Map;
 
 import org.geotools.factory.Hints;
+import org.geotools.geometry.jts.ReferencedEnvelope;
 import org.geotools.jdbc.ColumnMetadata;
 import org.geotools.jdbc.JDBCDataStore;
 import org.geotools.jdbc.PreparedFilterToSQL;
@@ -57,6 +59,12 @@ public class TiberoPSDialect extends PreparedStatementSQLDialect {
     public boolean includeTable(String schemaName, String tableName, Connection cx)
             throws SQLException {
         return delegate.includeTable(schemaName, tableName, cx);
+    }
+
+    @Override
+    public List<ReferencedEnvelope> getOptimizedBounds(String schema,
+            SimpleFeatureType featureType, Connection cx) throws SQLException, IOException {
+        return delegate.getOptimizedBounds(schema, featureType, cx);
     }
 
     @Override

@@ -16,14 +16,23 @@
  */
 package org.geotools.data.ngi;
 
+import java.io.IOException;
 import java.util.Set;
 import java.util.logging.Logger;
 
 import org.geotools.data.AbstractFeatureSource;
+import org.geotools.data.DataSourceException;
 import org.geotools.data.DataStore;
+import org.geotools.data.DefaultFeatureResults;
+import org.geotools.data.DefaultQuery;
 import org.geotools.data.FeatureListener;
+import org.geotools.data.Query;
+import org.geotools.data.QueryCapabilities;
+import org.geotools.data.simple.SimpleFeatureCollection;
+import org.geotools.data.store.EmptyFeatureCollection;
 import org.geotools.util.logging.Logging;
 import org.opengis.feature.simple.SimpleFeatureType;
+import org.opengis.filter.Filter;
 
 /**
  * NGI FeatureSource
@@ -33,7 +42,7 @@ import org.opengis.feature.simple.SimpleFeatureType;
  * @see
  * 
  */
-@SuppressWarnings("unchecked")
+@SuppressWarnings({ "unchecked", "deprecation" })
 public class NGIFeatureSource extends AbstractFeatureSource {
     protected static final Logger LOGGER = Logging.getLogger(NGIFeatureSource.class);
 
@@ -62,5 +71,41 @@ public class NGIFeatureSource extends AbstractFeatureSource {
 
     public SimpleFeatureType getSchema() {
         return featureType;
+    }
+
+    // ================= getFeatures(), getFeatures(Filter), getFeatures(Query)
+    // for WMS GetFeatureInfo(), WFS services
+    // ================================================================================
+
+    public SimpleFeatureCollection getFeatures() throws IOException {
+        return getFeatures(Filter.INCLUDE);
+    }
+
+    public SimpleFeatureCollection getFeatures(Filter filter) throws IOException {
+        return getFeatures(new DefaultQuery(getSchema().getTypeName(), filter));
+    }
+
+    public SimpleFeatureCollection getFeatures(Query query) throws IOException {
+        SimpleFeatureType schema = getSchema();
+        String typeName = schema.getTypeName();
+
+        if (query.getTypeName() == null) { // typeName unspecified we will "any" use a default
+            DefaultQuery defaultQuery = new DefaultQuery(query);
+            defaultQuery.setTypeName(typeName);
+        } else if (!typeName.equals(query.getTypeName())) {
+            return new EmptyFeatureCollection(schema);
+        }
+
+        final QueryCapabilities queryCapabilities = getQueryCapabilities();
+        if (!queryCapabilities.supportsSorting(query.getSortBy())) {
+            throw new DataSourceException("DataStore cannot provide the requested sort order");
+        }
+
+        SimpleFeatureCollection collection = new DefaultFeatureResults(this, query);
+        if (collection.getSchema().getGeometryDescriptor() == null) {
+            return collection; // no geometry no reprojection needed
+        }
+
+        return collection;
     }
 }

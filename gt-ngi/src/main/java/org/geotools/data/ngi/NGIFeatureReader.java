@@ -21,6 +21,7 @@ import java.util.NoSuchElementException;
 import java.util.logging.Logger;
 
 import org.geotools.data.FeatureReader;
+import org.geotools.data.Query;
 import org.geotools.util.logging.Logging;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
@@ -37,10 +38,15 @@ public class NGIFeatureReader implements FeatureReader<SimpleFeatureType, Simple
     protected static final Logger LOGGER = Logging.getLogger(NGIFeatureReader.class);
 
     private NGIReader reader;
-
+    
     public NGIFeatureReader(NGIReader reader, SimpleFeatureType featureType) {
+        this(reader, featureType,  Query.ALL);
+    }
+    
+    public NGIFeatureReader(NGIReader reader, SimpleFeatureType featureType, Query query) {
         this.reader = reader;
         this.reader.setSchema(featureType);
+        this.reader.setQuery(query);
     }
 
     public SimpleFeatureType getFeatureType() {

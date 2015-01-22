@@ -41,7 +41,7 @@ public abstract class AbstractNGIReader {
             String line = reader.readLine();
             while (line != null) {
                 if (line.equalsIgnoreCase("$LAYER_NAME")) {
-                    String name = reader.readLine(); // "건물" => 건물
+                    String name = reader.readLine();
                     name = name.substring(1, name.length() - 1);
                     if (name.equalsIgnoreCase(layerName)) {
                         return name;

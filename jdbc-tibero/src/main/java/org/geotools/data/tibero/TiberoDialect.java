@@ -615,6 +615,7 @@ public class TiberoDialect extends BasicSQLDialect {
                 value = value.getFactory().createLineString(
                         ((LinearRing) value).getCoordinateSequence());
             }
+
             sql.append("ST_GEOMFROMTEXT('" + value.toText() + "')");
         }
     }

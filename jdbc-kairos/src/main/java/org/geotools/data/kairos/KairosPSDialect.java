@@ -23,9 +23,11 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
+import java.util.List;
 import java.util.Map;
 
 import org.geotools.factory.Hints;
+import org.geotools.geometry.jts.ReferencedEnvelope;
 import org.geotools.jdbc.ColumnMetadata;
 import org.geotools.jdbc.JDBCDataStore;
 import org.geotools.jdbc.PreparedFilterToSQL;
@@ -57,6 +59,12 @@ public class KairosPSDialect extends PreparedStatementSQLDialect {
     public boolean includeTable(String schemaName, String tableName, Connection cx)
             throws SQLException {
         return delegate.includeTable(schemaName, tableName, cx);
+    }
+
+    @Override
+    public List<ReferencedEnvelope> getOptimizedBounds(String schema,
+            SimpleFeatureType featureType, Connection cx) throws SQLException, IOException {
+        return delegate.getOptimizedBounds(schema, featureType, cx);
     }
 
     @Override
@@ -198,7 +206,7 @@ public class KairosPSDialect extends PreparedStatementSQLDialect {
     @SuppressWarnings("rawtypes")
     public void prepareGeometryValue(Geometry g, int srid, Class binding, StringBuffer sql) {
         if (g != null) {
-            sql.append("ST_GEOMFROMWKB(?, " + srid + ")"); // yhl, 20131206
+            sql.append("ST_GEOMFROMWKB(?, " + srid + ")");   // yhl, 20131206
         } else {
             sql.append("?");
         }
@@ -213,10 +221,12 @@ public class KairosPSDialect extends PreparedStatementSQLDialect {
                 // WKT does not support linear rings
                 g = g.getFactory().createLineString(((LinearRing) g).getCoordinateSequence());
             }
+
             if ((g instanceof Polygon || g instanceof MultiPolygon) && !g.isValid()) {
                 g = g.buffer(0);
                 LOGGER.warning("Input geometry is not Valid!");
             }
+
             byte[] bytes = wkbWriter.write(g);
             ps.setBytes(column, bytes);
         } else {
