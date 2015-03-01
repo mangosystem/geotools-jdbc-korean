@@ -19,14 +19,24 @@ import org.geotools.jdbc.JDBCDataStoreFactory;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.type.Name;
 import org.opengis.filter.Filter;
+import org.opengis.referencing.FactoryException;
+import org.opengis.referencing.NoSuchAuthorityCodeException;
+
+import com.sun.org.apache.xerces.internal.impl.dv.util.Base64;
+import com.vividsolutions.jts.geom.Geometry;
+import com.vividsolutions.jts.io.ByteOrderValues;
+import com.vividsolutions.jts.io.ParseException;
+import com.vividsolutions.jts.io.WKBWriter;
+import com.vividsolutions.jts.io.WKTReader;
 
 public class TiberoTest {
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws IOException, NoSuchAuthorityCodeException,
+            FactoryException, ParseException {        
         new TiberoTest().execute();
     }
 
-    private void execute() throws IOException {
+    private void execute() throws IOException, NoSuchAuthorityCodeException, FactoryException {
         Map<String, Object> params = getConnection();
 
         // create datastore
@@ -37,17 +47,21 @@ public class TiberoTest {
         List<Name> typeNames = dataStore.getNames();
         for (Name typeName : typeNames) {
             SimpleFeatureSource sfs = dataStore.getFeatureSource(typeName);
+            // ReferencedEnvelope extent = sfs.getBounds();
+            // System.out.println(extent);
             if (sfs.getSchema().getGeometryDescriptor() == null) {
                 System.out.println(sfs.getName().toString() + " = " + sfs.getCount(Query.ALL));
             } else {
                 System.out.println(sfs.getSchema().getGeometryDescriptor().getType());
                 System.out.println(sfs.getName().toString() + " = " + sfs.getCount(Query.ALL));
             }
+
+            //printFeatures(sfs);
         }
-        
-        // upload shapefile firestation admin_sgg
-        String typeName = "admin_sgg";
-        DataStore shpStore = getShapefileDataStore("C:/OpenGeoSuite/data/seoul/");
+
+        // upload shapefile : ROAD_LINK2 STORES KOB_TL_LINK2
+        String typeName = "KOB_TL_LINK2";
+        DataStore shpStore = getShapefileDataStore("C:/OpenGeoSuite/tibero/");
         SimpleFeatureSource shp_sfs = shpStore.getFeatureSource(typeName);
         System.out.println(shp_sfs.getName().toString() + " = " + shp_sfs.getCount(Query.ALL));
 
@@ -57,7 +71,7 @@ public class TiberoTest {
 
         Transaction transaction = new DefaultTransaction(typeName);
         sfStore.setTransaction(transaction);
-        
+
         sfStore.addFeatures(shp_sfs.getFeatures());
 
         transaction.commit();
@@ -70,12 +84,25 @@ public class TiberoTest {
             featureIter = out.getFeatures(Filter.INCLUDE).features();
             while (featureIter.hasNext()) {
                 SimpleFeature feature = featureIter.next();
-                System.out.println(feature); 
+                System.out.println(feature);
             }
         } finally {
             featureIter.close();
         }
         System.out.println("completed");
+    }
+
+    private void printFeatures(SimpleFeatureSource sfs) throws IOException {
+        SimpleFeatureIterator featureIter = null;
+        try {
+            featureIter = sfs.getFeatures(Filter.INCLUDE).features();
+            while (featureIter.hasNext()) {
+                SimpleFeature feature = featureIter.next();
+                System.out.println(feature);
+            }
+        } finally {
+            featureIter.close();
+        }
     }
 
     private Map<String, Object> getConnection() {
@@ -86,6 +113,7 @@ public class TiberoTest {
         params.put(JDBCDataStoreFactory.PORT.key, "8629");
         params.put(JDBCDataStoreFactory.USER.key, "sysgis");
         params.put(JDBCDataStoreFactory.PASSWD.key, "dlalsvk");
+        params.put("preparedStatements", Boolean.TRUE);
         return params;
     }
 

@@ -17,7 +17,7 @@ select count(*) from "admin_sgg" where ST_Intersects("the_geom", st_geomfromtext
 ================================================
 import shapefile
 ================================================
-gisLoader는 linux에만 사용할 수 있다.
+Tibero 4에서 gisLoader는 linux에만 사용할 수 있으나, 5 버전부터는 Windows 가능
 http://technet.tmax.co.kr/kr/inquiry/qna/tibero/readBoardForm.do?bbsCode=qna_tibero&fc=inquiry&sc=inquiry_qna&tc=inquiry_qna_tibero&currentPage=1&seqNo=49602&categoryId=&productCode=&range=10&searchType=ALL&searchText=GIS
 
 gisLoader seoul_pop_flow.shp seoul_pop_flow
