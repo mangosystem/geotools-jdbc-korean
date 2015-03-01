@@ -26,6 +26,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.apache.commons.io.IOUtils;
+import org.geotools.data.Query;
 import org.geotools.factory.GeoTools;
 import org.geotools.feature.simple.SimpleFeatureBuilder;
 import org.geotools.geometry.jts.JTSFactoryFinder;
@@ -58,6 +59,8 @@ public class NGIReader extends AbstractNGIReader {
     CoordinateReferenceSystem crs;
 
     SimpleFeatureType schema;
+    
+    Query query = Query.ALL;
 
     Class<?> geomBinding;
 
@@ -89,6 +92,10 @@ public class NGIReader extends AbstractNGIReader {
 
     public SimpleFeatureType getSchema() {
         return schema;
+    }
+    
+    public void setQuery(Query query) {
+        this.query = query == null ? Query.ALL : query;
     }
 
     public void setSchema(SimpleFeatureType schema) {
@@ -122,7 +129,6 @@ public class NGIReader extends AbstractNGIReader {
         hasNext = nextRecord(ngiReader);
         if (ndaReader != null) {
             try {
-                // 7371, "영광읍", "행정지명", "법정명", "1000035610069H00410000000000073716"
                 String[] values = ndaReader.readLine().split(",");
                 int addIndex = 0;
                 for (int index = 0; index < schema.getAttributeCount(); index++) {
@@ -155,7 +161,7 @@ public class NGIReader extends AbstractNGIReader {
 
     private Geometry getNextGeometry(BufferedReader reader) {
         try {
-            String gtype = reader.readLine().toUpperCase().trim(); // LINESTRING
+            String gtype = reader.readLine().toUpperCase().trim();
             if (gtype.startsWith("POINT")) {
                 return gf.createPoint(parseCoordinate(reader.readLine()));
             } else if (gtype.startsWith("TEXT")) {

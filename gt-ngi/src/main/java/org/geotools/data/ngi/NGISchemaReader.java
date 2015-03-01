@@ -195,7 +195,7 @@ public class NGISchemaReader extends AbstractNGIReader {
             String line = reader.readLine();
             while (line != null) {
                 if (line.equalsIgnoreCase("$LAYER_NAME")) {
-                    String layerName = reader.readLine(); // "건물" => 건물
+                    String layerName = reader.readLine();
                     return layerName.substring(1, layerName.length() - 1);
                 }
                 line = reader.readLine();
@@ -270,33 +270,40 @@ public class NGISchemaReader extends AbstractNGIReader {
                         }
                     }
 
-                    if (shapetype.startsWith("TEXT")) {
-                        return Point.class;
-                    } else if (shapetype.startsWith("POINT")) {
-                        return Point.class;
-                    } else if (shapetype.startsWith("MULTIPOINT")) {
-                        return Point.class;
-                    } else if (shapetype.startsWith("LINESTRING")) {
-                        return LineString.class;
-                    } else if (shapetype.startsWith("MULTILINESTRING")) {
-                        return LineString.class;
-                    } else if (shapetype.startsWith("MULTILINE")) {
-                        return LineString.class;
-                    } else if (shapetype.startsWith("NETWORKCHAIN")) {
-                        return LineString.class;
-                    } else if (shapetype.startsWith("NETWORK CHAIN")) {
-                        return LineString.class;
-                    } else if (shapetype.startsWith("POLYGON")) {
-                        return Polygon.class;
-                    } else if (shapetype.startsWith("MULTIPOLYGON")) {
-                        return Polygon.class;
-                    }
+                    return getGeometryTypeFromName(shapetype);
                 }
                 line = reader.readLine();
             }
         } catch (IOException e) {
             LOGGER.log(Level.FINER, e.getMessage(), e);
         }
+        return null;
+    }
+
+    private Class<?> getGeometryTypeFromName(String shapetype) {
+
+        if (shapetype.startsWith("TEXT")) {
+            return Point.class;
+        } else if (shapetype.startsWith("POINT")) {
+            return Point.class;
+        } else if (shapetype.startsWith("MULTIPOINT")) {
+            return Point.class;
+        } else if (shapetype.startsWith("LINESTRING")) {
+            return LineString.class;
+        } else if (shapetype.startsWith("MULTILINESTRING")) {
+            return LineString.class;
+        } else if (shapetype.startsWith("MULTILINE")) {
+            return LineString.class;
+        } else if (shapetype.startsWith("NETWORKCHAIN")) {
+            return LineString.class;
+        } else if (shapetype.startsWith("NETWORK CHAIN")) {
+            return LineString.class;
+        } else if (shapetype.startsWith("POLYGON")) {
+            return Polygon.class;
+        } else if (shapetype.startsWith("MULTIPOLYGON")) {
+            return Polygon.class;
+        }
+
         return null;
     }
 }

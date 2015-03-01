@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<StyledLayerDescriptor version="1.0.0"
+	xmlns="http://www.opengis.net/sld" xmlns:ogc="http://www.opengis.net/ogc"
+	xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.opengis.net/sld http://schemas.opengis.net/sld/1.0.0/StyledLayerDescriptor.xsd">
+	<NamedLayer>
+		<Name>OD Flow Map</Name>
+		<UserStyle>
+			<Name>OD Flow Map</Name>
+			<FeatureTypeStyle>
+				<Rule>
+					<ogc:Filter>
+						<ogc:And>
+							<ogc:PropertyIsGreaterThanOrEqualTo>
+								<ogc:PropertyName>O_D</ogc:PropertyName>
+								<ogc:Literal>1000</ogc:Literal>
+							</ogc:PropertyIsGreaterThanOrEqualTo>
+							<ogc:PropertyIsEqualTo>
+								<ogc:PropertyName>ADM_CODE_O</ogc:PropertyName>
+								<ogc:Literal>11680</ogc:Literal>
+							</ogc:PropertyIsEqualTo>
+						</ogc:And>
+					</ogc:Filter>
+					<PolygonSymbolizer>
+						<Geometry>
+							<ogc:Function name="odflowmap">
+								<ogc:PropertyName>the_geom</ogc:PropertyName>
+								<ogc:PropertyName>O_D</ogc:PropertyName>
+								<ogc:Literal>1000</ogc:Literal>
+								<ogc:Literal>8000</ogc:Literal>
+								<ogc:Literal>2500</ogc:Literal>
+								<ogc:Literal>Arrow</ogc:Literal>
+							</ogc:Function>
+						</Geometry>
+						<Fill>
+							<CssParameter name="fill">#FF0000</CssParameter>
+							<CssParameter name="fill-opacity">0.9</CssParameter>
+						</Fill>
+						<Stroke>
+							<CssParameter name="stroke">#FFFFFF</CssParameter>
+							<CssParameter name="stroke-width">0.1</CssParameter>
+							<CssParameter name="fill-opacity">0.1</CssParameter>
+						</Stroke>
+					</PolygonSymbolizer>
+					<LineSymbolizer>
+						<Stroke>
+							<CssParameter name="stroke">#FF0000</CssParameter>
+							<CssParameter name="stroke-width">0.2</CssParameter>
+							<CssParameter name="fill-opacity">0.9</CssParameter>
+						</Stroke>
+					</LineSymbolizer>
+					<TextSymbolizer>
+						<Label>
+							<ogc:PropertyName>O_D</ogc:PropertyName>
+						</Label>
+						<LabelPlacement>
+							<LinePlacement />
+						</LabelPlacement>
+						<Halo>
+							<Radius>1.5</Radius>
+							<Fill>
+								<CssParameter name="fill">#FFFFFF</CssParameter>
+							</Fill>
+						</Halo>
+						<Fill>
+							<CssParameter name="fill">#0000FF</CssParameter>
+						</Fill>
+						<Font>
+							<CssParameter name="font-family">Arial</CssParameter>
+							<CssParameter name="font-size">10</CssParameter>
+							<CssParameter name="font-style">normal</CssParameter>
+							<CssParameter name="font-weight">bold</CssParameter>
+						</Font>
+						<VendorOption name="followLine">true</VendorOption>
+						<VendorOption name="maxAngleDelta">90</VendorOption>
+						<VendorOption name="maxDisplacement">400</VendorOption>
+					</TextSymbolizer>
+				</Rule>
+			</FeatureTypeStyle>
+		</UserStyle>
+	</NamedLayer>
+</StyledLayerDescriptor>

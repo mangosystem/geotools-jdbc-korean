@@ -91,11 +91,6 @@ public class KairosPSDialect extends PreparedStatementSQLDialect {
         delegate.encodeGeometryColumn(gatt, prefix, srid, hints, sql);
     }
 
-    public void encodeGeometryColumn(GeometryDescriptor gatt, String prefix, int srid,
-            StringBuffer sql) {
-        delegate.encodeGeometryColumn(gatt, prefix, srid, sql);
-    }
-
     @Override
     public void encodeGeometryEnvelope(String tableName, String geometryColumn, StringBuffer sql) {
         delegate.encodeGeometryEnvelope(tableName, geometryColumn, sql);
@@ -204,9 +199,10 @@ public class KairosPSDialect extends PreparedStatementSQLDialect {
     }
 
     @SuppressWarnings("rawtypes")
-    public void prepareGeometryValue(Geometry g, int srid, Class binding, StringBuffer sql) {
+    @Override
+    public void prepareGeometryValue(Geometry g, int dimension, int srid, Class binding, StringBuffer sql ) {
         if (g != null) {
-            sql.append("ST_GEOMFROMWKB(?, " + srid + ")"); // yhl, 20131206
+            sql.append("ST_GEOMFROMWKB(?, " + srid + ")");   // yhl, 20131206
         } else {
             sql.append("?");
         }
@@ -221,10 +217,12 @@ public class KairosPSDialect extends PreparedStatementSQLDialect {
                 // WKT does not support linear rings
                 g = g.getFactory().createLineString(((LinearRing) g).getCoordinateSequence());
             }
+
             if ((g instanceof Polygon || g instanceof MultiPolygon) && !g.isValid()) {
                 g = g.buffer(0);
                 LOGGER.warning("Input geometry is not Valid!");
             }
+
             byte[] bytes = wkbWriter.write(g);
             ps.setBytes(column, bytes);
         } else {

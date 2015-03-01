@@ -42,13 +42,12 @@ import com.vividsolutions.jts.geom.GeometryFactory;
 import com.vividsolutions.jts.geom.LinearRing;
 import com.vividsolutions.jts.geom.MultiPolygon;
 import com.vividsolutions.jts.geom.Polygon;
+import com.vividsolutions.jts.io.ByteOrderValues;
 import com.vividsolutions.jts.io.WKBWriter;
 
 public class TiberoPSDialect extends PreparedStatementSQLDialect {
 
     private TiberoDialect delegate;
-
-    private WKBWriter wkbWriter = new WKBWriter();
 
     public TiberoPSDialect(JDBCDataStore store, TiberoDialect delegate) {
         super(store);
@@ -89,11 +88,6 @@ public class TiberoPSDialect extends PreparedStatementSQLDialect {
     public void encodeGeometryColumn(GeometryDescriptor gatt, String prefix, int srid, Hints hints,
             StringBuffer sql) {
         delegate.encodeGeometryColumn(gatt, prefix, srid, hints, sql);
-    }
-
-    public void encodeGeometryColumn(GeometryDescriptor gatt, String prefix, int srid,
-            StringBuffer sql) {
-        delegate.encodeGeometryColumn(gatt, prefix, srid, sql);
     }
 
     @Override
@@ -204,11 +198,12 @@ public class TiberoPSDialect extends PreparedStatementSQLDialect {
     }
 
     @SuppressWarnings("rawtypes")
-    public void prepareGeometryValue(Geometry g, int srid, Class binding, StringBuffer sql) {
+    @Override
+    public void prepareGeometryValue(Geometry g, int dimension, int srid, Class binding, StringBuffer sql ) {
         if (g != null) {
             sql.append("ST_GEOMFROMWKB(?)");
         } else {
-            sql.append("?");
+            super.prepareGeometryValue(g, dimension, srid, binding, sql);
         }
     }
 
@@ -225,7 +220,7 @@ public class TiberoPSDialect extends PreparedStatementSQLDialect {
                 g = g.buffer(0);
                 LOGGER.warning("Input geometry is not Valid!");
             }
-            byte[] bytes = wkbWriter.write(g);
+            byte[] bytes = new WKBWriter(dimension, ByteOrderValues.LITTLE_ENDIAN).write(g);
             ps.setBytes(column, bytes);
         } else {
             ps.setNull(column, Types.OTHER, "Geometry");

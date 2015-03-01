@@ -177,13 +177,6 @@ public class AltibaseDialect extends BasicSQLDialect {
         sql.append(")");
     }
 
-    public void encodeGeometryColumn(GeometryDescriptor gatt, String prefix, int srid,
-            StringBuffer sql) {
-        sql.append(" ASBINARY(");
-        encodeColumnName(prefix, gatt.getLocalName(), sql);
-        sql.append(")");
-    }
-
     @Override
     public void encodeGeometryEnvelope(String tableName, String geometryColumn, StringBuffer sql) {
         sql.append(" ASTEXT(ENVELOPE(");

@@ -43,7 +43,7 @@ public class TiberoNGDataStoreFactory extends JDBCDataStoreFactory {
             "Perform only primary filter on bbox", false, Boolean.TRUE);
 
     /** parameter that enables estimated extends instead of exact ones */
-    public static final Param ESTIMATED_EXTENTS = new Param("Estimated extends", Boolean.class, "Use the spatial index information to quickly get an estimate of the data bounds", false, Boolean.FALSE);
+    public static final Param ESTIMATED_EXTENTS = new Param("Estimated extends", Boolean.class, "Use the spatial index information to quickly get an estimate of the data bounds", false, Boolean.TRUE);
 
     /** Whether a prepared statements based dialect should be used, or not */
     public static final Param PREPARED_STATEMENTS = new Param("preparedStatements", Boolean.class, "Use prepared statements", false, Boolean.TRUE);
@@ -64,7 +64,7 @@ public class TiberoNGDataStoreFactory extends JDBCDataStoreFactory {
     }
 
     public String getDescription() {
-        return "Tibero RDBMS 4.0+ Database";
+        return "TmaxSoft(tm) Tibero 5.0+ Database";
     }
 
     @Override

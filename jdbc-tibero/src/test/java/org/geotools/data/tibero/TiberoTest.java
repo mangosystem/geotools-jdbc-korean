@@ -15,95 +15,57 @@ import org.geotools.data.Transaction;
 import org.geotools.data.simple.SimpleFeatureIterator;
 import org.geotools.data.simple.SimpleFeatureSource;
 import org.geotools.data.simple.SimpleFeatureStore;
-import org.geotools.factory.CommonFactoryFinder;
-import org.geotools.factory.GeoTools;
-import org.geotools.geometry.jts.JTSFactoryFinder;
 import org.geotools.jdbc.JDBCDataStoreFactory;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.type.Name;
 import org.opengis.filter.Filter;
-import org.opengis.filter.FilterFactory2;
+import org.opengis.referencing.FactoryException;
+import org.opengis.referencing.NoSuchAuthorityCodeException;
 
-import com.vividsolutions.jts.geom.Coordinate;
+import com.sun.org.apache.xerces.internal.impl.dv.util.Base64;
 import com.vividsolutions.jts.geom.Geometry;
-import com.vividsolutions.jts.geom.GeometryFactory;
+import com.vividsolutions.jts.io.ByteOrderValues;
+import com.vividsolutions.jts.io.ParseException;
+import com.vividsolutions.jts.io.WKBWriter;
+import com.vividsolutions.jts.io.WKTReader;
 
 public class TiberoTest {
 
-    static FilterFactory2 ff = CommonFactoryFinder.getFilterFactory2(GeoTools.getDefaultHints());
-
-    static GeometryFactory gf = JTSFactoryFinder.getGeometryFactory(GeoTools.getDefaultHints());
-
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws IOException, NoSuchAuthorityCodeException,
+            FactoryException, ParseException {        
         new TiberoTest().execute();
     }
 
-    private void execute() throws IOException {
+    private void execute() throws IOException, NoSuchAuthorityCodeException, FactoryException {
         Map<String, Object> params = getConnection();
 
         // create datastore
         TiberoNGDataStoreFactory factory = new TiberoNGDataStoreFactory();
         DataStore dataStore = factory.createDataStore(params);
 
-        // filter
-        SimpleFeatureSource sgg = dataStore.getFeatureSource("admin_sgg");
-
-        Filter filter = null;
-
-        filter = ff.equal(ff.property("SGG_NM"), ff.literal("강남구"), true);
-        System.out.println(sgg.getFeatures(filter).size());
-
-        Geometry jtsGeom = gf.createPoint(new Coordinate(200000, 450000)).buffer(9500);
-        filter = ff.intersects(ff.property("the_geom"), ff.literal(jtsGeom));
-        System.out.println(sgg.getFeatures(filter).size());
-        
-        filter = ff.dwithin(ff.property("the_geom"), ff.literal(jtsGeom), 9500, "m");
-        System.out.println(sgg.getFeatures(filter).size());
-
-        if (true)
-            return;
-
         // get typenames
         List<Name> typeNames = dataStore.getNames();
         for (Name typeName : typeNames) {
             SimpleFeatureSource sfs = dataStore.getFeatureSource(typeName);
+            // ReferencedEnvelope extent = sfs.getBounds();
+            // System.out.println(extent);
             if (sfs.getSchema().getGeometryDescriptor() == null) {
                 System.out.println(sfs.getName().toString() + " = " + sfs.getCount(Query.ALL));
             } else {
                 System.out.println(sfs.getSchema().getGeometryDescriptor().getType());
                 System.out.println(sfs.getName().toString() + " = " + sfs.getCount(Query.ALL));
             }
+
+            //printFeatures(sfs);
         }
 
-        // upload shapefile firestation admin_sgg events
-        DataStore shpStore = getShapefileDataStore("C:/OpenGeoSuite/data/seoul/");
-
-        SimpleFeatureSource shp_sfs = shpStore.getFeatureSource("admin_emd");
+        // upload shapefile : ROAD_LINK2 STORES KOB_TL_LINK2
+        String typeName = "KOB_TL_LINK2";
+        DataStore shpStore = getShapefileDataStore("C:/OpenGeoSuite/tibero/");
+        SimpleFeatureSource shp_sfs = shpStore.getFeatureSource(typeName);
         System.out.println(shp_sfs.getName().toString() + " = " + shp_sfs.getCount(Query.ALL));
 
-        SimpleFeatureSource out = convert(shp_sfs, dataStore);
-
-        SimpleFeatureIterator featureIter = null;
-        try {
-            featureIter = out.getFeatures(filter).features();
-            while (featureIter.hasNext()) {
-                SimpleFeature feature = featureIter.next();
-                System.out.println(feature);
-            }
-        } finally {
-            featureIter.close();
-        }
-
-        System.out.println(out.getName().toString() + " inserted = " + out.getCount(Query.ALL));
-        System.out.println("completed");
-    }
-
-    private SimpleFeatureSource convert(SimpleFeatureSource shp_sfs, DataStore dataStore)
-            throws IOException {
-        String typeName = shp_sfs.getSchema().getTypeName();
-
         dataStore.createSchema(shp_sfs.getSchema());
-
         SimpleFeatureSource out = dataStore.getFeatureSource(typeName);
         SimpleFeatureStore sfStore = (SimpleFeatureStore) out;
 
@@ -116,7 +78,31 @@ public class TiberoTest {
         sfStore.setTransaction(Transaction.AUTO_COMMIT);
         transaction.close();
 
-        return out;
+        System.out.println(out.getName().toString() + " inserted = " + out.getCount(Query.ALL));
+        SimpleFeatureIterator featureIter = null;
+        try {
+            featureIter = out.getFeatures(Filter.INCLUDE).features();
+            while (featureIter.hasNext()) {
+                SimpleFeature feature = featureIter.next();
+                System.out.println(feature);
+            }
+        } finally {
+            featureIter.close();
+        }
+        System.out.println("completed");
+    }
+
+    private void printFeatures(SimpleFeatureSource sfs) throws IOException {
+        SimpleFeatureIterator featureIter = null;
+        try {
+            featureIter = sfs.getFeatures(Filter.INCLUDE).features();
+            while (featureIter.hasNext()) {
+                SimpleFeature feature = featureIter.next();
+                System.out.println(feature);
+            }
+        } finally {
+            featureIter.close();
+        }
     }
 
     private Map<String, Object> getConnection() {
@@ -127,12 +113,15 @@ public class TiberoTest {
         params.put(JDBCDataStoreFactory.PORT.key, "8629");
         params.put(JDBCDataStoreFactory.USER.key, "sysgis");
         params.put(JDBCDataStoreFactory.PASSWD.key, "dlalsvk");
+        params.put("preparedStatements", Boolean.TRUE);
         return params;
     }
 
-    private DataStore getShapefileDataStore(String folder) throws IOException {
+    public static DataStore getShapefileDataStore(String folder) throws IOException {
         Map<String, Object> params = new HashMap<String, Object>();
-        params.put("url", DataUtilities.fileToURL(new File(folder)));
+
+        final File file = new File(folder);
+        params.put("url", DataUtilities.fileToURL(file));
         params.put("charset", "x-windows-949");
 
         return DataStoreFinder.getDataStore(params);

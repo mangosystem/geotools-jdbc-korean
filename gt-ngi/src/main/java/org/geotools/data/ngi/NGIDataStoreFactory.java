@@ -107,7 +107,7 @@ public class NGIDataStoreFactory extends AbstractDataStoreFactory implements Dat
 
         CoordinateReferenceSystem crs = null;
         if (code == null || code.isEmpty()) {
-            crs = null; // default??
+            crs = null;    // default??
         } else {
             try {
                 crs = CRS.decode(code);

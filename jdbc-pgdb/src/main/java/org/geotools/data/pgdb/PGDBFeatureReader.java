@@ -80,8 +80,8 @@ public class PGDBFeatureReader implements FeatureReader<SimpleFeatureType, Simpl
 
     private void queryLayer() {
         try {
-            final String sql = "SELECT * FROM \"" + JdbcUtilities.toAccess(schema.getTypeName())
-                    + "\"";
+            String sql = "SELECT * FROM \"";
+            sql += JdbcUtilities.toAccess(schema.getTypeName()) + "\"";
             stmt = cx.createStatement();
             rs = stmt.executeQuery(sql);
         } catch (SQLException e) {
