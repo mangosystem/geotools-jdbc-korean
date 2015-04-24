@@ -59,13 +59,11 @@ import com.vividsolutions.jts.io.WKTReader;
 
 public class TiberoDialect extends BasicSQLDialect {
 
-    static final Version V_4_0_0 = new Version("4.0.0");
+    static final Version version = new Version("5.0.0");
 
     boolean looseBBOXEnabled = false;
 
     boolean estimatedExtentsEnabled = false;
-
-    Version version;
 
     @SuppressWarnings({ "rawtypes", "serial" })
     final static Map<String, Class> TYPE_TO_CLASS_MAP = new HashMap<String, Class>() {
@@ -179,13 +177,6 @@ public class TiberoDialect extends BasicSQLDialect {
         sql.append(")");
     }
 
-    public void encodeGeometryColumn(GeometryDescriptor gatt, String prefix, int srid,
-            StringBuffer sql) {
-        sql.append(" ST_ASBINARY(");
-        encodeColumnName(prefix, gatt.getLocalName(), sql);
-        sql.append(")");
-    }
-
     @Override
     public void encodeGeometryEnvelope(String tableName, String geometryColumn, StringBuffer sql) {
         sql.append(" ST_ASTEXT(ST_ENVELOPE(");
@@ -220,46 +211,41 @@ public class TiberoDialect extends BasicSQLDialect {
             if (!cx.getAutoCommit()) {
                 savePoint = cx.setSavepoint();
             }
-
+            
             GeometryDescriptor att = featureType.getGeometryDescriptor();
             String geometryField = att.getName().getLocalPart();
 
-            // use estimated extent (optimizer statistics)
+            // ==================Support: Tibero 5======================
+            // SELECT MIN(ST_MINX(OBJ)), MIN(ST_MINY(OBJ)), MAX(ST_MAXX(OBJ)), MAX(ST_MAXY(OBJ)) FROM ROAD;
+            // =========================================================
+
             StringBuffer sql = new StringBuffer();
-            sql.append("SELECT ST_ASBINARY(ST_Envelope(");
-            sql.append(" \"").append(geometryField).append("\"))");
+            sql.append("SELECT ");
+            sql.append("  MIN(ST_MINX(\"").append(geometryField).append("\"))");
+            sql.append(", MIN(ST_MINY(\"").append(geometryField).append("\"))");
+            sql.append(", MAX(ST_MAXX(\"").append(geometryField).append("\"))");
+            sql.append(", MAX(ST_MAXY(\"").append(geometryField).append("\"))");
             sql.append(" FROM \"");
             sql.append(tableName);
             sql.append("\"");
 
             rs = st.executeQuery(sql.toString());
+            if (rs.next()) {
+                CoordinateReferenceSystem crs = att.getCoordinateReferenceSystem();
+                final double x1 = rs.getDouble(1);
+                final double y1 = rs.getDouble(2);
+                final double x2 = rs.getDouble(3);
+                final double y2 = rs.getDouble(4);
 
-            CoordinateReferenceSystem crs = att.getCoordinateReferenceSystem();
-
-            WKBReader reader = new WKBReader();
-            Envelope extent = null;
-            while (rs.next()) {
-                final byte[] bytes = rs.getBytes(1);
-                try {
-                    Geometry env = reader.read(bytes);
-                    if (extent == null) {
-                        extent = env.getEnvelopeInternal();
-                    } else {
-                        extent.expandToInclude(env.getEnvelopeInternal());
-                    }
-                } catch (ParseException e) {
-                    // LOGGER.log(Level.FINER, e.getMessage(), e);
-                }
+                // reproject and merge
+                result.add(new ReferencedEnvelope(x1, x2, y1, y2, crs));
             }
-
-            // reproject and merge
-            result.add(new ReferencedEnvelope(extent, crs));
         } catch (SQLException e) {
             if (savePoint != null) {
                 cx.rollback(savePoint);
             }
             LOGGER.log(Level.WARNING,
-                    "Failed to use ST_Estimated_Extent, falling back on envelope aggregation", e);
+                    "Failed to search Extent, falling back on envelope aggregation", e);
             return null;
         } finally {
             if (savePoint != null) {
@@ -531,7 +517,7 @@ public class TiberoDialect extends BasicSQLDialect {
                     GeometryDescriptor gd = (GeometryDescriptor) att;
 
                     // lookup or reverse engineer the srid
-                    int srid = 101;   // default value
+                    int srid = 101; // default value
 
                     if (gd.getUserData().get(JDBCDataStore.JDBC_NATIVE_SRID) != null) {
                         srid = (Integer) gd.getUserData().get(JDBCDataStore.JDBC_NATIVE_SRID);
@@ -559,8 +545,8 @@ public class TiberoDialect extends BasicSQLDialect {
 
                     // register the geometry type, first remove and eventual
                     // leftover, then write out the real one
-                    String sql = "DELETE FROM GEOMETRY_COLUMNS_BASE"
-                            + " WHERE F_TABLE_SCHEMA = '" + schemaName + "'" //
+                    String sql = "DELETE FROM GEOMETRY_COLUMNS_BASE" + " WHERE F_TABLE_SCHEMA = '"
+                            + schemaName + "'" //
                             + " AND F_TABLE_NAME = '" + tableName + "'" //
                             + " AND F_GEOMETRY_COLUMN = '" + gd.getLocalName() + "'";
 
@@ -578,7 +564,18 @@ public class TiberoDialect extends BasicSQLDialect {
                     st.execute(sql);
 
                     // add the spatial index
-                    
+                    // CREATE INDEX IDX_STORES_GEOMETRY ON SYSGIS.STORES("the_geom") RTREE;
+                    sql = "CREATE INDEX \"SPATIAL_" + tableName //
+                            + "_" + gd.getLocalName() + "\""//
+                            + " ON " //
+                            + "\"" + schemaName + "\"" //
+                            + "." //
+                            + "\"" + tableName + "\"" //
+                            + " (" //
+                            + "\"" + gd.getLocalName() + "\"" //
+                            + ") RTREE";
+                    // LOGGER.fine(sql);
+                    // st.execute(sql);
 
                     // create sequence
                     String sequenceName = getSequenceForColumn(schemaName, tableName, "fid", cx);
@@ -633,9 +630,26 @@ public class TiberoDialect extends BasicSQLDialect {
 
     @Override
     public void applyLimitOffset(StringBuffer sql, int limit, int offset) {
-        // SELECT * FROM EMP WHERE ROWNUM <= 10;
-        if (limit >= 0) {
-            sql.append(" AND ROWNUM <= " + limit);
+        // see http://progcookbook.blogspot.com/2006/02/using-rownum-properly-for-pagination.html
+        // and http://www.oracle.com/technology/oramag/oracle/07-jan/o17asktom.html
+        // to understand why we are going thru such hoops in order to get it working
+        // The same techinique is used in Hibernate to support pagination
+
+        if (offset == 0) {
+            // top-n query: select * from (your_query) where rownum <= n;
+            sql.insert(0, "SELECT * FROM (");
+            sql.append(") WHERE ROWNUM <= " + limit);
+        } else {
+            // find results between N and M
+            // select * from
+            // ( select rownum rnum, a.*
+            // from (your_query) a
+            // where rownum <= :M )
+            // where rnum >= :N;
+            long max = (limit == Integer.MAX_VALUE ? Long.MAX_VALUE : limit + offset);
+            sql.insert(0, "SELECT * FROM (SELECT A.*, ROWNUM RNUM FROM ( ");
+            sql.append(") A WHERE ROWNUM <= " + max + ")");
+            sql.append("WHERE RNUM > " + offset);
         }
     }
 
@@ -684,18 +698,14 @@ public class TiberoDialect extends BasicSQLDialect {
      * @return
      */
     public Version getVersion(Connection conn) throws SQLException {
-        if (version == null) {
-            version = new Version("V_4_0_0");
-        }
-
         return version;
     }
 
     /**
-     * Returns true if the Tibero version is >= 4.0.0
+     * Returns true if the Tibero version is >= 5.0.0
      */
     boolean supportsGeography(Connection cx) throws SQLException {
-        return false; // getVersion(cx).compareTo(V_4_0_0) >= 0;
+        return false;
     }
 
 }

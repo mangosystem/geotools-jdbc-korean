@@ -23,9 +23,11 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
+import java.util.List;
 import java.util.Map;
 
 import org.geotools.factory.Hints;
+import org.geotools.geometry.jts.ReferencedEnvelope;
 import org.geotools.jdbc.ColumnMetadata;
 import org.geotools.jdbc.JDBCDataStore;
 import org.geotools.jdbc.PreparedFilterToSQL;
@@ -40,13 +42,12 @@ import com.vividsolutions.jts.geom.GeometryFactory;
 import com.vividsolutions.jts.geom.LinearRing;
 import com.vividsolutions.jts.geom.MultiPolygon;
 import com.vividsolutions.jts.geom.Polygon;
+import com.vividsolutions.jts.io.ByteOrderValues;
 import com.vividsolutions.jts.io.WKBWriter;
 
 public class TiberoPSDialect extends PreparedStatementSQLDialect {
 
     private TiberoDialect delegate;
-
-    private WKBWriter wkbWriter = new WKBWriter();
 
     public TiberoPSDialect(JDBCDataStore store, TiberoDialect delegate) {
         super(store);
@@ -57,6 +58,12 @@ public class TiberoPSDialect extends PreparedStatementSQLDialect {
     public boolean includeTable(String schemaName, String tableName, Connection cx)
             throws SQLException {
         return delegate.includeTable(schemaName, tableName, cx);
+    }
+
+    @Override
+    public List<ReferencedEnvelope> getOptimizedBounds(String schema,
+            SimpleFeatureType featureType, Connection cx) throws SQLException, IOException {
+        return delegate.getOptimizedBounds(schema, featureType, cx);
     }
 
     @Override
@@ -81,11 +88,6 @@ public class TiberoPSDialect extends PreparedStatementSQLDialect {
     public void encodeGeometryColumn(GeometryDescriptor gatt, String prefix, int srid, Hints hints,
             StringBuffer sql) {
         delegate.encodeGeometryColumn(gatt, prefix, srid, hints, sql);
-    }
-
-    public void encodeGeometryColumn(GeometryDescriptor gatt, String prefix, int srid,
-            StringBuffer sql) {
-        delegate.encodeGeometryColumn(gatt, prefix, srid, sql);
     }
 
     @Override
@@ -201,7 +203,7 @@ public class TiberoPSDialect extends PreparedStatementSQLDialect {
         if (g != null) {
             sql.append("ST_GEOMFROMWKB(?)");
         } else {
-            sql.append("?");
+            super.prepareGeometryValue(g, srid, binding, sql);
         }
     }
 
@@ -214,13 +216,11 @@ public class TiberoPSDialect extends PreparedStatementSQLDialect {
                 // WKT does not support linear rings
                 g = g.getFactory().createLineString(((LinearRing) g).getCoordinateSequence());
             }
-
             if ((g instanceof Polygon || g instanceof MultiPolygon) && !g.isValid()) {
                 g = g.buffer(0);
                 LOGGER.warning("Input geometry is not Valid!");
             }
-
-            byte[] bytes = wkbWriter.write(g);
+            byte[] bytes = new WKBWriter(2, ByteOrderValues.LITTLE_ENDIAN).write(g);
             ps.setBytes(column, bytes);
         } else {
             ps.setNull(column, Types.OTHER, "Geometry");
