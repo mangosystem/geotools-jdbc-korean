@@ -91,11 +91,6 @@ public class AltibasePSDialect extends PreparedStatementSQLDialect {
         delegate.encodeGeometryColumn(gatt, prefix, srid, hints, sql);
     }
 
-    public void encodeGeometryColumn(GeometryDescriptor gatt, String prefix, int srid,
-            StringBuffer sql) {
-        delegate.encodeGeometryColumn(gatt, prefix, srid, sql);
-    }
-
     @Override
     public void encodeGeometryEnvelope(String tableName, String geometryColumn, StringBuffer sql) {
         delegate.encodeGeometryEnvelope(tableName, geometryColumn, sql);
