@@ -23,9 +23,11 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
+import java.util.List;
 import java.util.Map;
 
 import org.geotools.factory.Hints;
+import org.geotools.geometry.jts.ReferencedEnvelope;
 import org.geotools.jdbc.ColumnMetadata;
 import org.geotools.jdbc.JDBCDataStore;
 import org.geotools.jdbc.PreparedFilterToSQL;
@@ -60,6 +62,12 @@ public class KairosPSDialect extends PreparedStatementSQLDialect {
     }
 
     @Override
+    public List<ReferencedEnvelope> getOptimizedBounds(String schema,
+            SimpleFeatureType featureType, Connection cx) throws SQLException, IOException {
+        return delegate.getOptimizedBounds(schema, featureType, cx);
+    }
+
+    @Override
     public Envelope decodeGeometryEnvelope(ResultSet rs, int column, Connection cx)
             throws SQLException, IOException {
         return delegate.decodeGeometryEnvelope(rs, column, cx);
@@ -81,11 +89,6 @@ public class KairosPSDialect extends PreparedStatementSQLDialect {
     public void encodeGeometryColumn(GeometryDescriptor gatt, String prefix, int srid, Hints hints,
             StringBuffer sql) {
         delegate.encodeGeometryColumn(gatt, prefix, srid, hints, sql);
-    }
-
-    public void encodeGeometryColumn(GeometryDescriptor gatt, String prefix, int srid,
-            StringBuffer sql) {
-        delegate.encodeGeometryColumn(gatt, prefix, srid, sql);
     }
 
     @Override
@@ -199,7 +202,7 @@ public class KairosPSDialect extends PreparedStatementSQLDialect {
     @Override
     public void prepareGeometryValue(Geometry g, int srid, Class binding, StringBuffer sql) {
         if (g != null) {
-            sql.append("ST_GEOMFROMWKB(?, " + srid + ")");   // yhl, 20131206
+            sql.append("ST_GEOMFROMWKB(?, " + srid + ")"); // yhl, 20131206
         } else {
             sql.append("?");
         }
