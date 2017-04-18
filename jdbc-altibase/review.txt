@@ -6,12 +6,15 @@ http://atc.altibase.com/techSupport?do=techSupportView&paramCaseNo=28920
 
 환경 변수
  - ALTIBASE_NLS_USE : 데이터 검색 시, 사용자에게 보여주는 문자 셋
+ 
 알티베이스DB에서 사용하는 캐릭터셋 확인 방법
  - 5.x 버전 : v$nls_parameters 뷰의 NLS_CHARACTERSET
  - 4.x 버전 : select name, value1 from v$property where name like 'NLS_USE';
+ 
 ClassName
  - 4.x 버전(Altibase.jar) : Altibase.jdbc.driver.AltibaseDriver
  - 5.x 버전(Altibase5.jar) : Altibase5.jdbc.driver.AltibaseDriver
+ 
 URL(공통)
  - jdbc:Altibase://ip:20300/mydb?encoding=KO16KSC5601
  - encoding=UTF8, US7ASCII, KO16KSC5601, MS949 가능. 
