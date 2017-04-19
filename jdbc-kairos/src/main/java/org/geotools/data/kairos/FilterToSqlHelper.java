@@ -151,7 +151,5 @@ class FilterToSqlHelper {
         geometry.accept(delegate, extraData);
 
         out.write(closingParenthesis);
-
     }
-
 }

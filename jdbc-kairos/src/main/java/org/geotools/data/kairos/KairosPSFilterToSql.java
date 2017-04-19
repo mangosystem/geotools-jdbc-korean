@@ -16,11 +16,16 @@
  */
 package org.geotools.data.kairos;
 
+import java.io.IOException;
+
 import org.geotools.filter.FilterCapabilities;
 import org.geotools.jdbc.PreparedFilterToSQL;
 import org.opengis.filter.expression.Literal;
 import org.opengis.filter.expression.PropertyName;
 import org.opengis.filter.spatial.BinarySpatialOperator;
+
+import com.vividsolutions.jts.geom.Geometry;
+import com.vividsolutions.jts.geom.LinearRing;
 
 @SuppressWarnings("deprecation")
 public class KairosPSFilterToSql extends PreparedFilterToSQL {
@@ -38,6 +43,21 @@ public class KairosPSFilterToSql extends PreparedFilterToSQL {
 
     public void setLooseBBOXEnabled(boolean looseBBOXEnabled) {
         helper.looseBBOXEnabled = looseBBOXEnabled;
+    }
+
+    @Override
+    protected void visitLiteralGeometry(Literal expression) throws IOException {
+        // evaluate the literal and store it for later
+        Geometry geom = (Geometry) evaluateLiteral(expression, Geometry.class);
+
+        if (geom instanceof LinearRing) {
+            // WKT does not support linear rings
+            geom = geom.getFactory().createLineString(((LinearRing) geom).getCoordinateSequence());
+        }
+
+        out.write("ST_GEOMFROMTEXT('");
+        out.write(geom.toText());
+        out.write("')");
     }
 
     @Override

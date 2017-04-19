@@ -18,6 +18,7 @@ package org.geotools.data.kairos;
 
 import java.io.IOException;
 import java.sql.Connection;
+import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Savepoint;
@@ -55,20 +56,15 @@ import com.vividsolutions.jts.geom.Point;
 import com.vividsolutions.jts.geom.Polygon;
 import com.vividsolutions.jts.io.ParseException;
 import com.vividsolutions.jts.io.WKBReader;
-import com.vividsolutions.jts.io.WKBWriter;
 import com.vividsolutions.jts.io.WKTReader;
 
 public class KairosDialect extends BasicSQLDialect {
-
-    static final Version V_5_0_0 = new Version("5.0.0");
 
     boolean looseBBOXEnabled = false;
 
     boolean estimatedExtentsEnabled = false;
 
     Version version;
-
-    WKBWriter wkbWriter = new WKBWriter();
 
     static Integer GEOM_POINT = Integer.valueOf(4000);
 
@@ -146,6 +142,16 @@ public class KairosDialect extends BasicSQLDialect {
 
     public void setEstimatedExtentsEnabled(boolean estimatedExtentsEnabled) {
         this.estimatedExtentsEnabled = estimatedExtentsEnabled;
+    }
+
+    @Override
+    public boolean isAggregatedSortSupported(String function) {
+        return "distinct".equalsIgnoreCase(function);
+    }
+
+    @Override
+    public void initializeConnection(Connection cx) throws SQLException {
+        super.initializeConnection(cx);
     }
 
     @Override
@@ -235,7 +241,7 @@ public class KairosDialect extends BasicSQLDialect {
             String geometryField = att.getName().getLocalPart();
 
             // ==================Kairos======================
-            // SELECT ST_ASBINARY(ST_EXTENT(geom)) from fishnet
+            // SELECT ST_ASBINARY(ST_EXTENT(geom)) FROM ROAD;
             // ================================================
 
             // use estimated extent (optimizer statistics)
@@ -372,11 +378,50 @@ public class KairosDialect extends BasicSQLDialect {
     }
 
     @Override
+    public int getGeometryDimension(String schemaName, String tableName, String columnName,
+            Connection cx) throws SQLException {
+        // first attempt, try with the geometry metadata
+        Statement statement = null;
+        ResultSet result = null;
+        int dimension = 2; // default
+        try {
+            // try geometry_columns
+            try {
+                String sqlStatement = "SELECT COORD_DIMENSION FROM GEOMETRY_COLUMNS WHERE " //
+                        + "F_TABLE_SCHEMA = '" + schemaName + "' " //
+                        + "AND F_TABLE_NAME = '" + tableName + "' " //
+                        + "AND F_GEOMETRY_COLUMN = '" + columnName + "'";
+
+                LOGGER.log(Level.FINE, "Geometry srid check; {0} ", sqlStatement);
+                statement = cx.createStatement();
+                result = statement.executeQuery(sqlStatement);
+
+                if (result.next()) {
+                    dimension = result.getInt(1);
+                }
+            } catch (SQLException e) {
+                LOGGER.log(Level.WARNING, "Failed to retrieve information about " + schemaName
+                        + "." + tableName + "." + columnName
+                        + " from the geometry_columns table, checking the first geometry instead",
+                        e);
+            } finally {
+                dataStore.closeSafe(result);
+            }
+
+        } finally {
+            dataStore.closeSafe(result);
+            dataStore.closeSafe(statement);
+        }
+
+        return dimension;
+    }
+
+    @Override
     public String getSequenceForColumn(String schemaName, String tableName, String columnName,
             Connection cx) throws SQLException {
 
         if (columnName.toUpperCase().contains("GEOM") || columnName.toUpperCase().contains("SHAPE")) {
-            // Kairos special
+            // Kairos special case
             return null;
         }
 
@@ -581,6 +626,9 @@ public class KairosDialect extends BasicSQLDialect {
 
                     // assume 2 dimensions, but ease future customisation
                     int dimensions = 2;
+                    if (gd.getUserData().get(Hints.COORDINATE_DIMENSION) != null) {
+                        dimensions = (Integer) gd.getUserData().get(Hints.COORDINATE_DIMENSION);
+                    }
 
                     // grab the geometry type
                     String geomType = CLASS_TO_TYPE_MAP.get(gd.getType().getBinding());
@@ -646,6 +694,22 @@ public class KairosDialect extends BasicSQLDialect {
     }
 
     @Override
+    public void postDropTable(String schemaName, SimpleFeatureType featureType, Connection cx)
+            throws SQLException {
+        Statement st = cx.createStatement();
+        try {
+            String tableName = featureType.getTypeName();
+            // remove all the geometry_column entries
+            String sql = "DELETE FROM GEOMETRY_COLUMNS" + " WHERE F_TABLE_SCHEMA = '"
+                    + schemaName + "'" + " AND F_TABLE_NAME = '" + tableName + "'";
+            LOGGER.fine(sql);
+            st.execute(sql);
+        } finally {
+            dataStore.closeSafe(st);
+        }
+    }
+
+    @Override
     public void encodeGeometryValue(Geometry value, int dimension, int srid, StringBuffer sql)
             throws IOException {
         if (value == null) {
@@ -656,6 +720,7 @@ public class KairosDialect extends BasicSQLDialect {
                 value = value.getFactory().createLineString(
                         ((LinearRing) value).getCoordinateSequence());
             }
+            
             // KAIROS ERROR: ERROR(43003) WKT string is too long. Max length is 4KB
             sql.append("ST_GeomFromText('" + value.toText() + "', " + srid + ")");
         }
@@ -724,6 +789,23 @@ public class KairosDialect extends BasicSQLDialect {
         return 255;
     }
 
+    @Override
+    public void encodePostColumnCreateTable(AttributeDescriptor att, StringBuffer sql) {
+        // encodePostColumnCreateTable
+    }
+
+    @Override
+    public void postCreateAttribute(AttributeDescriptor att, String tableName, String schemaName,
+            Connection cx) throws SQLException {
+        // postCreateAttribute
+    }
+
+    @Override
+    public void postCreateFeatureType(SimpleFeatureType featureType, DatabaseMetaData metadata,
+            String schemaName, Connection cx) throws SQLException {
+        // postCreateFeatureType
+    }
+
     /**
      * Returns the Kairos version
      * 
@@ -731,7 +813,7 @@ public class KairosDialect extends BasicSQLDialect {
      */
     public Version getVersion(Connection conn) throws SQLException {
         if (version == null) {
-            version = new Version("V_5_0_0");
+            version = new Version("V_5_0_0"); // Minimum Version
         }
         return version;
     }
