@@ -26,13 +26,17 @@ import org.geotools.jdbc.SQLDialect;
 @SuppressWarnings("rawtypes")
 public class AltibaseNGDataStoreFactory extends JDBCDataStoreFactory {
 
-    // 인코딩 추가?
-
     /** parameter for database type */
     public static final Param DBTYPE = new Param("dbtype", String.class, "Type", true, "altibase");
 
     /** parameter for database instance */
     public static final Param DATABASE = new Param("database", String.class, "Database", false, "mydb");
+
+    /** parameter for database encoding */
+    public static final Param ENCODING = new Param("encoding", String.class, "Encoding", true, "KO16KSC5601");
+
+    /** parameter for database schema */
+    public static final Param SCHEMA = new Param("schema", String.class, "Schema", true, "SYS");
 
     /** parameter for database port */
     public static final Param PORT = new Param("port", Integer.class, "Port", true, 20300);
@@ -56,7 +60,7 @@ public class AltibaseNGDataStoreFactory extends JDBCDataStoreFactory {
 
     @Override
     protected String getDatabaseID() {
-        return (String) "altibase";
+        return (String) DBTYPE.sample;
     }
 
     @Override
@@ -100,7 +104,7 @@ public class AltibaseNGDataStoreFactory extends JDBCDataStoreFactory {
     protected JDBCDataStore createDataStoreInternal(JDBCDataStore dataStore, Map params)
             throws IOException {
         // database schema
-        String schema = (String) USER.lookUp(params);
+        String schema = (String) SCHEMA.lookUp(params);
         if (schema != null) {
             // NOTE: schema is an owner in this database
             dataStore.setDatabaseSchema(schema.toUpperCase());
@@ -140,6 +144,8 @@ public class AltibaseNGDataStoreFactory extends JDBCDataStoreFactory {
         parameters.put(HOST.key, HOST);
         parameters.put(PORT.key, PORT);
         parameters.put(DATABASE.key, DATABASE);
+        parameters.put(ENCODING.key, ENCODING);
+        parameters.put(SCHEMA.key, SCHEMA);
         parameters.put(USER.key, USER);
         parameters.put(PASSWD.key, PASSWD);
         parameters.put(NAMESPACE.key, NAMESPACE);
@@ -175,8 +181,13 @@ public class AltibaseNGDataStoreFactory extends JDBCDataStoreFactory {
         String host = (String) HOST.lookUp(params);
         String db = (String) DATABASE.lookUp(params);
         Integer port = (Integer) PORT.lookUp(params);
+        String encoding = (String) ENCODING.lookUp(params);
 
-        return "jdbc:Altibase" + "://" + host + ":" + port + "/" + db;
+        if (encoding == null || encoding.isEmpty()) {
+            return "jdbc:Altibase" + "://" + host + ":" + port + "/" + db;
+        } else {
+            // jdbc:Altibase://host:20300/mydb?encoding=KO16KSC5601
+            return "jdbc:Altibase" + "://" + host + ":" + port + "/" + db + "?encoding=" + encoding;
+        }
     }
-
 }

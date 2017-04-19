@@ -92,7 +92,7 @@ class FilterToSqlHelper {
 
     void visitDistanceSpatialOperator(DistanceBufferOperator filter, PropertyName property,
             Literal geometry, boolean swapped, Object extraData) throws IOException {
-        // TODO: Altibase does not support DWithin, Beyond
+        // NOTE: Altibase does not support DWithin, Beyond
 
         if ((filter instanceof DWithin && !swapped) || (filter instanceof Beyond && swapped)) {
             out.write("ST_Distance(");
@@ -151,5 +151,4 @@ class FilterToSqlHelper {
 
         out.write(closingParenthesis);
     }
-
 }

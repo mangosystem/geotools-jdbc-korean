@@ -61,8 +61,6 @@ import com.vividsolutions.jts.io.WKTReader;
 
 public class AltibaseDialect extends BasicSQLDialect {
 
-    static final Version V_5_5_1 = new Version("5.5.1");
-
     boolean looseBBOXEnabled = false;
 
     boolean estimatedExtentsEnabled = false;
@@ -124,6 +122,16 @@ public class AltibaseDialect extends BasicSQLDialect {
 
     public void setEstimatedExtentsEnabled(boolean estimatedExtentsEnabled) {
         this.estimatedExtentsEnabled = estimatedExtentsEnabled;
+    }
+
+    @Override
+    public boolean isAggregatedSortSupported(String function) {
+        return "distinct".equalsIgnoreCase(function);
+    }
+
+    @Override
+    public void initializeConnection(Connection cx) throws SQLException {
+        super.initializeConnection(cx);
     }
 
     @Override
@@ -371,6 +379,10 @@ public class AltibaseDialect extends BasicSQLDialect {
         try {
             // try geometry_columns
             try {
+                if (schemaName == null) {
+                    schemaName = "SYS";
+                }
+                
                 String sridSQL = "SELECT SRID FROM GEOMETRY_COLUMNS WHERE " //
                         + "F_TABLE_SCHEMA = '" + schemaName + "' " //
                         + "AND F_TABLE_NAME = '" + tableName + "' " //
@@ -401,6 +413,49 @@ public class AltibaseDialect extends BasicSQLDialect {
         }
 
         return srid;
+    }
+
+    @Override
+    public int getGeometryDimension(String schemaName, String tableName, String columnName,
+            Connection cx) throws SQLException {
+        // first attempt, try with the geometry metadata
+        Statement statement = null;
+        ResultSet result = null;
+        int dimension = 2; // default
+        try {
+            // try geometry_columns
+            try {
+                if (schemaName == null) {
+                    schemaName = "SYS";
+                }
+                
+                String sqlStatement = "SELECT COORD_DIMENSION FROM GEOMETRY_COLUMNS WHERE " //
+                        + "F_TABLE_SCHEMA = '" + schemaName + "' " //
+                        + "AND F_TABLE_NAME = '" + tableName + "' " //
+                        + "AND F_GEOMETRY_COLUMN = '" + columnName + "'";
+
+                LOGGER.log(Level.FINE, "Geometry dimension check; {0} ", sqlStatement);
+                statement = cx.createStatement();
+                result = statement.executeQuery(sqlStatement);
+
+                if (result.next()) {
+                    dimension = result.getInt(1);
+                }
+            } catch (SQLException e) {
+                LOGGER.log(Level.WARNING, "Failed to retrieve information about " + schemaName
+                        + "." + tableName + "." + columnName
+                        + " from the geometry_columns table, checking the first geometry instead",
+                        e);
+            } finally {
+                dataStore.closeSafe(result);
+            }
+
+        } finally {
+            dataStore.closeSafe(result);
+            dataStore.closeSafe(statement);
+        }
+
+        return dimension;
     }
 
     @Override
@@ -466,6 +521,7 @@ public class AltibaseDialect extends BasicSQLDialect {
     @Override
     public void registerClassToSqlMappings(Map<Class<?>, Integer> mappings) {
         super.registerClassToSqlMappings(mappings);
+
         // jdbc metadata for geom columns reports DATA_TYPE=1111=Types.OTHER
         mappings.put(Geometry.class, Types.OTHER);
     }
@@ -493,79 +549,6 @@ public class AltibaseDialect extends BasicSQLDialect {
     public void encodePrimaryKey(String column, StringBuffer sql) {
         encodeColumnName(null, column, sql);
         sql.append(" INTEGER PRIMARY KEY");
-    }
-
-    @Override
-    public void encodePostColumnCreateTable(AttributeDescriptor att, StringBuffer sql) {
-        if (att.getType() instanceof GeometryType) {
-            Class<?> origBinding = att.getType().getBinding();
-
-            // altibase.properties
-            // #=================================================================
-            // # ST Object Buffer Size Properties
-            // #=================================================================
-            // ST_OBJECT_BUFFER_SIZE = 32000 # default : 32000 ==> 1,523
-            // # min : 32000
-            // # max : 104857600 ==> 4,993,219
-
-            // altibase.properties
-            Integer fieldSize = 32000;
-            // Insert Error: Invalid length of the data type : WKB Geometry Size
-            if (origBinding.isAssignableFrom(MultiPolygon.class)) {
-                fieldSize = 32000 * 10;
-            } else if (origBinding.isAssignableFrom(Polygon.class)) {
-                fieldSize = 32000 * 10;
-            } else if (origBinding.isAssignableFrom(MultiLineString.class)) {
-                fieldSize = 32000 * 2;
-            } else if (origBinding.isAssignableFrom(LineString.class)) {
-                fieldSize = 32000;
-            } else if (origBinding.isAssignableFrom(MultiPoint.class)) {
-                fieldSize = 32000;
-            } else if (origBinding.isAssignableFrom(Point.class)) {
-                fieldSize = 100;
-            }
-
-            sql.append("(").append(fieldSize).append(")");
-        }
-    }
-
-    Map<String, Integer> getColumnMeta(DatabaseMetaData metadata, String schemaName,
-            String tableName) throws SQLException {
-        // Column: TABLE_CAT: Value: null
-        // Column: TABLE_SCHEM: Value: SYS
-        // Column: TABLE_NAME: Value: seoul_aa_emd
-        // Column: COLUMN_NAME: Value: emd_nm
-        // Column: DATA_TYPE: Value: 12
-        // Column: TYPE_NAME: Value: VARCHAR
-        // Column: COLUMN_SIZE: Value: 254
-        // Column: BUFFER_LENGTH: Value: 256
-        // Column: DECIMAL_DIGITS: Value: 0
-        // Column: NUM_PREC_RADIX: Value: null
-        // Column: NULLABLE: Value: 1
-        // Column: REMARKS: Value: V
-        // Column: COLUMN_DEF: Value: null
-        // Column: SQL_DATA_TYPE: Value: 12
-        // Column: SQL_DATETIME_SUB: Value: null
-        // Column: CHAR_OCTET_LENGTH: Value: 256
-        // Column: ORDINAL_POSITION: Value: 8
-        // Column: IS_NULLABLE: Value: YES
-
-        Map<String, Integer> map = new HashMap<String, Integer>();
-        ResultSet rs = null;
-
-        try {
-            rs = metadata.getColumns(null, schemaName, tableName, "%");
-            while (rs.next()) {
-                String columnName = rs.getString("COLUMN_NAME");
-                Integer columnSize = rs.getInt("COLUMN_SIZE");
-
-                map.put(columnName, columnSize);
-            }
-        } finally {
-            dataStore.closeSafe(rs);
-        }
-
-        return Collections.unmodifiableMap(map);
     }
 
     @Override
@@ -602,6 +585,9 @@ public class AltibaseDialect extends BasicSQLDialect {
 
                     // assume 2 dimensions, but ease future customisation
                     int dimensions = 2;
+                    if (gd.getUserData().get(Hints.COORDINATE_DIMENSION) != null) {
+                        dimensions = (Integer) gd.getUserData().get(Hints.COORDINATE_DIMENSION);
+                    }
 
                     // register the geometry type, first remove and eventual
                     // leftover, then write out the real one
@@ -660,6 +646,26 @@ public class AltibaseDialect extends BasicSQLDialect {
     }
 
     @Override
+    public void postDropTable(String schemaName, SimpleFeatureType featureType, Connection cx)
+            throws SQLException {
+        Statement st = cx.createStatement();
+        try {
+            if (schemaName == null) {
+                schemaName = "SYS";
+            }
+
+            String tableName = featureType.getTypeName();
+            // remove all the geometry_column entries
+            String sql = "DELETE FROM GEOMETRY_COLUMNS" + " WHERE F_TABLE_SCHEMA = '"
+                    + schemaName + "'" + " AND F_TABLE_NAME = '" + tableName + "'";
+            LOGGER.fine(sql);
+            st.execute(sql);
+        } finally {
+            dataStore.closeSafe(st);
+        }
+    }
+
+    @Override
     public void encodeGeometryValue(Geometry value, int dimension, int srid, StringBuffer sql)
             throws IOException {
         if (value == null) {
@@ -670,7 +676,8 @@ public class AltibaseDialect extends BasicSQLDialect {
                 value = value.getFactory().createLineString(
                         ((LinearRing) value).getCoordinateSequence());
             }
-            // Altibase 에서 WKT는 32K 까지만 지원
+            
+            // Altibase WKT string is too long. Max length is 32KB
             sql.append(" GEOMFROMTEXT('" + value.toText() + "')");
         }
     }
@@ -738,16 +745,86 @@ public class AltibaseDialect extends BasicSQLDialect {
         return 255;
     }
 
+    @Override
+    public void encodePostColumnCreateTable(AttributeDescriptor att, StringBuffer sql) {
+        if (att.getType() instanceof GeometryType) {
+            Class<?> origBinding = att.getType().getBinding();
+
+            // altibase.properties
+            // #=================================================================
+            // # ST Object Buffer Size Properties
+            // #=================================================================
+            // ST_OBJECT_BUFFER_SIZE = 32000 # default : 32000 ==> 1,523
+            // # min : 32000
+            // # max : 104857600 ==> 4,993,219
+
+            // altibase.properties
+            Integer fieldSize = 32000;
+            // Insert Error: Invalid length of the data type : WKB Geometry Size
+            if (origBinding.isAssignableFrom(MultiPolygon.class)) {
+                fieldSize = 32000 * 10;
+            } else if (origBinding.isAssignableFrom(Polygon.class)) {
+                fieldSize = 32000 * 10;
+            } else if (origBinding.isAssignableFrom(MultiLineString.class)) {
+                fieldSize = 32000 * 2;
+            } else if (origBinding.isAssignableFrom(LineString.class)) {
+                fieldSize = 32000;
+            } else if (origBinding.isAssignableFrom(MultiPoint.class)) {
+                fieldSize = 32000;
+            } else if (origBinding.isAssignableFrom(Point.class)) {
+                fieldSize = 100;
+            }
+
+            sql.append("(").append(fieldSize).append(")");
+        }
+    }
+
+    Map<String, Integer> getColumnMeta(DatabaseMetaData metadata, String schemaName,
+            String tableName) throws SQLException {
+        Map<String, Integer> map = new HashMap<String, Integer>();
+        ResultSet rs = null;
+
+        try {
+            rs = metadata.getColumns(null, schemaName, tableName, "%");
+            while (rs.next()) {
+                String columnName = rs.getString("COLUMN_NAME");
+                Integer columnSize = rs.getInt("COLUMN_SIZE");
+
+                map.put(columnName, columnSize);
+            }
+        } finally {
+            dataStore.closeSafe(rs);
+        }
+
+        return Collections.unmodifiableMap(map);
+    }
+
+    @Override
+    public void postCreateAttribute(AttributeDescriptor att, String tableName, String schemaName,
+            Connection cx) throws SQLException {
+        // postCreateAttribute
+    }
+
+    @Override
+    public void postCreateFeatureType(SimpleFeatureType featureType, DatabaseMetaData metadata,
+            String schemaName, Connection cx) throws SQLException {
+        // postCreateFeatureType
+    }
+
+    /**
+     * Returns the Altibase version
+     * 
+     * @return
+     */
     public Version getVersion(Connection conn) throws SQLException {
         if (version == null) {
-            version = new Version("V_5_5_1");
+            version = new Version("V_5_5_1"); // Minimum Version
 
             Statement st = null;
             ResultSet rs = null;
-
             try {
                 st = conn.createStatement();
-                rs = st.executeQuery("select PRODUCT_VERSION from v$version");
+                rs = st.executeQuery("SELECT PRODUCT_VERSION FROM v$version");
                 if (rs.next()) {
                     version = new Version(rs.getString(1));
                 }
@@ -760,6 +837,9 @@ public class AltibaseDialect extends BasicSQLDialect {
         return version;
     }
 
+    /**
+     * Returns true if the Kairos version is >= x.x
+     */
     boolean supportsGeography(Connection cx) throws SQLException {
         return false; // getVersion(cx).compareTo(V_5_5_1) >= 0;
     }
