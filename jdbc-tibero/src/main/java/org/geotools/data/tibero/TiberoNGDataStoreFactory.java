@@ -32,6 +32,9 @@ public class TiberoNGDataStoreFactory extends JDBCDataStoreFactory {
     /** parameter for database instance */
     public static final Param DATABASE = new Param("database", String.class, "Database", true, "tibero");
 
+    /** parameter for database schema */
+    public static final Param SCHEMA = new Param("schema", String.class, "Schema", true, "SYSGIS");
+
     /** parameter for database port */
     public static final Param PORT = new Param("port", Integer.class, "Port", true, 8629);
 
@@ -39,14 +42,13 @@ public class TiberoNGDataStoreFactory extends JDBCDataStoreFactory {
     public static final Param USER = new Param("user", String.class, "User", true, "sysgis");
 
     /** enables using && in bbox queries */
-    public static final Param LOOSEBBOX = new Param("Loose bbox", Boolean.class,
-            "Perform only primary filter on bbox", false, Boolean.TRUE);
+    public static final Param LOOSEBBOX = new Param("Loose bbox", Boolean.class, "Perform only primary filter on bbox", false, Boolean.TRUE);
 
     /** parameter that enables estimated extends instead of exact ones */
     public static final Param ESTIMATED_EXTENTS = new Param("Estimated extends", Boolean.class, "Use the spatial index information to quickly get an estimate of the data bounds", false, Boolean.TRUE);
 
     /** Whether a prepared statements based dialect should be used, or not */
-    public static final Param PREPARED_STATEMENTS = new Param("preparedStatements", Boolean.class, "Use prepared statements", false, Boolean.TRUE);
+    public static final Param PREPARED_STATEMENTS = new Param("preparedStatements", Boolean.class, "Use prepared statements", false, Boolean.FALSE);
 
     @Override
     protected SQLDialect createSQLDialect(JDBCDataStore dataStore) {
@@ -55,7 +57,7 @@ public class TiberoNGDataStoreFactory extends JDBCDataStoreFactory {
 
     @Override
     protected String getDatabaseID() {
-        return (String) "tibero";
+        return (String) DBTYPE.sample;
     }
 
     @Override
@@ -90,7 +92,7 @@ public class TiberoNGDataStoreFactory extends JDBCDataStoreFactory {
     protected JDBCDataStore createDataStoreInternal(JDBCDataStore dataStore, Map params)
             throws IOException {
         // database schema
-        String schema = (String) USER.lookUp(params);
+        String schema = (String) SCHEMA.lookUp(params);
         if (schema != null) {
             // NOTE: schema is an owner in this database
             dataStore.setDatabaseSchema(schema.toUpperCase());
@@ -127,6 +129,7 @@ public class TiberoNGDataStoreFactory extends JDBCDataStoreFactory {
         parameters.put(HOST.key, HOST);
         parameters.put(PORT.key, PORT);
         parameters.put(DATABASE.key, DATABASE);
+        parameters.put(SCHEMA.key, SCHEMA);
         parameters.put(USER.key, USER);
         parameters.put(PASSWD.key, PASSWD);
         parameters.put(NAMESPACE.key, NAMESPACE);

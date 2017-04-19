@@ -18,6 +18,7 @@ package org.geotools.data.tibero;
 
 import java.io.IOException;
 import java.sql.Connection;
+import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Savepoint;
@@ -27,6 +28,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.logging.Level;
 
 import org.geotools.data.jdbc.FilterToSQL;
@@ -54,16 +56,15 @@ import com.vividsolutions.jts.geom.MultiPolygon;
 import com.vividsolutions.jts.geom.Point;
 import com.vividsolutions.jts.geom.Polygon;
 import com.vividsolutions.jts.io.ParseException;
-import com.vividsolutions.jts.io.WKBReader;
 import com.vividsolutions.jts.io.WKTReader;
 
 public class TiberoDialect extends BasicSQLDialect {
 
-    static final Version version = new Version("5.0.0");
-
     boolean looseBBOXEnabled = false;
 
     boolean estimatedExtentsEnabled = false;
+
+    Version version;
 
     @SuppressWarnings({ "rawtypes", "serial" })
     final static Map<String, Class> TYPE_TO_CLASS_MAP = new HashMap<String, Class>() {
@@ -120,6 +121,16 @@ public class TiberoDialect extends BasicSQLDialect {
 
     public void setEstimatedExtentsEnabled(boolean estimatedExtentsEnabled) {
         this.estimatedExtentsEnabled = estimatedExtentsEnabled;
+    }
+
+    @Override
+    public boolean isAggregatedSortSupported(String function) {
+        return "distinct".equalsIgnoreCase(function);
+    }
+
+    @Override
+    public void initializeConnection(Connection cx) throws SQLException {
+        super.initializeConnection(cx);
     }
 
     @Override
@@ -200,6 +211,9 @@ public class TiberoDialect extends BasicSQLDialect {
         }
 
         String tableName = featureType.getTypeName();
+        if (dataStore.getVirtualTables().get(tableName) != null) {
+            return null;
+        }
 
         Statement st = null;
         ResultSet rs = null;
@@ -211,7 +225,7 @@ public class TiberoDialect extends BasicSQLDialect {
             if (!cx.getAutoCommit()) {
                 savePoint = cx.setSavepoint();
             }
-            
+
             GeometryDescriptor att = featureType.getGeometryDescriptor();
             String geometryField = att.getName().getLocalPart();
 
@@ -277,6 +291,15 @@ public class TiberoDialect extends BasicSQLDialect {
     @Override
     public Class<?> getMapping(ResultSet columnMetaData, Connection cx) throws SQLException {
         String typeName = columnMetaData.getString("TYPE_NAME");
+
+        if ("uuid".equalsIgnoreCase(typeName)) {
+            return UUID.class;
+        }
+
+        if ("citext".equalsIgnoreCase(typeName)) {
+            return String.class;
+        }
+
         String gType = null;
         if ("geometry".equalsIgnoreCase(typeName)) {
             gType = lookupGeometryType(columnMetaData, cx, "geometry_columns", "f_geometry_column");
@@ -368,6 +391,10 @@ public class TiberoDialect extends BasicSQLDialect {
         try {
             // try geometry_columns
             try {
+                if (schemaName == null) {
+                    schemaName = "SYSGIS";
+                }
+
                 String sqlStatement = "SELECT SRID FROM GEOMETRY_COLUMNS WHERE " //
                         + "F_TABLE_SCHEMA = '" + schemaName + "' " //
                         + "AND F_TABLE_NAME = '" + tableName + "' " //
@@ -398,6 +425,49 @@ public class TiberoDialect extends BasicSQLDialect {
     }
 
     @Override
+    public int getGeometryDimension(String schemaName, String tableName, String columnName,
+            Connection cx) throws SQLException {
+        // first attempt, try with the geometry metadata
+        Statement statement = null;
+        ResultSet result = null;
+        int dimension = 2; // default
+        try {
+            // try geometry_columns
+            try {
+                if (schemaName == null) {
+                    schemaName = "SYSGIS";
+                }
+
+                String sqlStatement = "SELECT COORD_DIMENSION FROM GEOMETRY_COLUMNS WHERE " //
+                        + "F_TABLE_SCHEMA = '" + schemaName + "' " //
+                        + "AND F_TABLE_NAME = '" + tableName + "' " //
+                        + "AND F_GEOMETRY_COLUMN = '" + columnName + "'";
+
+                LOGGER.log(Level.FINE, "Geometry dimension check; {0} ", sqlStatement);
+                statement = cx.createStatement();
+                result = statement.executeQuery(sqlStatement);
+
+                if (result.next()) {
+                    dimension = result.getInt(1);
+                }
+            } catch (SQLException e) {
+                LOGGER.log(Level.WARNING, "Failed to retrieve information about " + schemaName
+                        + "." + tableName + "." + columnName
+                        + " from the geometry_columns table, checking the first geometry instead",
+                        e);
+            } finally {
+                dataStore.closeSafe(result);
+            }
+
+        } finally {
+            dataStore.closeSafe(result);
+            dataStore.closeSafe(statement);
+        }
+
+        return dimension;
+    }
+
+    @Override
     public String getSequenceForColumn(String schemaName, String tableName, String columnName,
             Connection cx) throws SQLException {
         return "seq_" + tableName + "_" + columnName;
@@ -416,8 +486,6 @@ public class TiberoDialect extends BasicSQLDialect {
             try {
                 if (rs.next()) {
                     return rs.getLong(1);
-                } else {
-                    LOGGER.log(Level.WARNING, "Failed to retrieve sequence from " + sequenceName);
                 }
             } finally {
                 dataStore.closeSafe(rs);
@@ -426,7 +494,7 @@ public class TiberoDialect extends BasicSQLDialect {
             dataStore.closeSafe(st);
         }
 
-        return 0;
+        return null;
     }
 
     @Override
@@ -461,21 +529,24 @@ public class TiberoDialect extends BasicSQLDialect {
     @Override
     public void registerClassToSqlMappings(Map<Class<?>, Integer> mappings) {
         super.registerClassToSqlMappings(mappings);
-        // jdbc metadata for geom columns reports DATA_TYPE=1111=Types.OTHER
 
-        mappings.put(Short.class, Types.SMALLINT);
-        mappings.put(Integer.class, Types.INTEGER);
-        mappings.put(Float.class, Types.FLOAT);
-        mappings.put(Double.class, Types.DOUBLE);
-        mappings.put(Geometry.class, Types.OTHER);
+        // jdbc metadata for geom columns reports DATA_TYPE=1111=Types.OTHER
+        mappings.put(Short.class, new Integer(Types.SMALLINT));
+        mappings.put(Integer.class, new Integer(Types.INTEGER));
+        mappings.put(Float.class, new Integer(Types.REAL));
+        mappings.put(Double.class, new Integer(Types.DOUBLE));
+        mappings.put(Geometry.class, new Integer(Types.OTHER));
+        mappings.put(UUID.class, Types.OTHER);
     }
 
     @Override
     public void registerSqlTypeNameToClassMappings(Map<String, Class<?>> mappings) {
         super.registerSqlTypeNameToClassMappings(mappings);
+
         mappings.put("GEOMETRY", Geometry.class);
         mappings.put("geometry", Geometry.class);
         mappings.put("text", String.class);
+        mappings.put("uuid", UUID.class);
     }
 
     @Override
@@ -536,6 +607,9 @@ public class TiberoDialect extends BasicSQLDialect {
 
                     // assume 2 dimensions, but ease future customisation
                     int dimensions = 2;
+                    if (gd.getUserData().get(Hints.COORDINATE_DIMENSION) != null) {
+                        dimensions = (Integer) gd.getUserData().get(Hints.COORDINATE_DIMENSION);
+                    }
 
                     // grab the geometry type
                     String geomType = CLASS_TO_TYPE_MAP.get(gd.getType().getBinding());
@@ -574,8 +648,8 @@ public class TiberoDialect extends BasicSQLDialect {
                             + " (" //
                             + "\"" + gd.getLocalName() + "\"" //
                             + ") RTREE";
-                    // LOGGER.fine(sql);
-                    // st.execute(sql);
+                    LOGGER.fine(sql);
+                    st.execute(sql);
 
                     // create sequence
                     String sequenceName = getSequenceForColumn(schemaName, tableName, "fid", cx);
@@ -596,6 +670,26 @@ public class TiberoDialect extends BasicSQLDialect {
                 }
             }
             cx.commit();
+        } finally {
+            dataStore.closeSafe(st);
+        }
+    }
+
+    @Override
+    public void postDropTable(String schemaName, SimpleFeatureType featureType, Connection cx)
+            throws SQLException {
+        Statement st = cx.createStatement();
+        try {
+            if (schemaName == null) {
+                schemaName = "SYSGIS";
+            }
+
+            String tableName = featureType.getTypeName();
+            // remove all the geometry_column entries
+            String sql = "DELETE FROM GEOMETRY_COLUMNS_BASE" + " WHERE F_TABLE_SCHEMA = '"
+                    + schemaName + "'" + " AND F_TABLE_NAME = '" + tableName + "'";
+            LOGGER.fine(sql);
+            st.execute(sql);
         } finally {
             dataStore.closeSafe(st);
         }
@@ -637,16 +731,9 @@ public class TiberoDialect extends BasicSQLDialect {
         // The same techinique is used in Hibernate to support pagination
 
         if (offset == 0) {
-            // top-n query: select * from (your_query) where rownum <= n;
             sql.insert(0, "SELECT * FROM (");
             sql.append(") WHERE ROWNUM <= " + limit);
         } else {
-            // find results between N and M
-            // select * from
-            // ( select rownum rnum, a.*
-            // from (your_query) a
-            // where rownum <= :M )
-            // where rnum >= :N;
             long max = (limit == Integer.MAX_VALUE ? Long.MAX_VALUE : limit + offset);
             sql.insert(0, "SELECT * FROM (SELECT A.*, ROWNUM RNUM FROM ( ");
             sql.append(") A WHERE ROWNUM <= " + max + ")");
@@ -693,20 +780,53 @@ public class TiberoDialect extends BasicSQLDialect {
         return 255;
     }
 
+    @Override
+    public void encodePostColumnCreateTable(AttributeDescriptor att, StringBuffer sql) {
+        // encodePostColumnCreateTable
+    }
+
+    @Override
+    public void postCreateAttribute(AttributeDescriptor att, String tableName, String schemaName,
+            Connection cx) throws SQLException {
+        // postCreateAttribute
+    }
+
+    @Override
+    public void postCreateFeatureType(SimpleFeatureType featureType, DatabaseMetaData metadata,
+            String schemaName, Connection cx) throws SQLException {
+        // postCreateFeatureType
+    }
+
     /**
      * Returns the Tibero version
      * 
      * @return
      */
     public Version getVersion(Connection conn) throws SQLException {
+        if (version == null) {
+            version = new Version("V_5_0_0"); // Minimum Version
+
+            Statement st = null;
+            ResultSet rs = null;
+            try {
+                st = conn.createStatement();
+                rs = st.executeQuery("SELECT * FROM v$version WHERE NAME = 'PRODUCT_MAJOR'");
+                if (rs.next()) {
+                    version = new Version(rs.getString(1));
+                }
+            } finally {
+                dataStore.closeSafe(rs);
+                dataStore.closeSafe(st);
+            }
+        }
         return version;
     }
 
     /**
-     * Returns true if the Tibero version is >= 4.0.0
+     * Returns true if the Kairos version is >= x.x
      */
     boolean supportsGeography(Connection cx) throws SQLException {
-        return false;
+        return false; // getVersion(cx).compareTo(V_5_0_0) >= 0;
     }
 
 }

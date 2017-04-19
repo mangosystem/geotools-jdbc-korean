@@ -1,15 +1,15 @@
 ================================================
 티베로 설치 후 SYSGIS에서 사용하는 법
-Tibero_5_r71907_Win_x86_64_trial.exe
+Tibero_6_FS06_win_64_20170310.exe
 ================================================
 최초 접속시 SYS로 접속하여 다음과 같이 SYSGIS 계정의 비밀번호를 설정한다.
- - ALTER USER SYSGIS IDENTIFIED BY dlalsvk;
+ - ALTER USER SYSGIS IDENTIFIED BY tibero;
 
 만약 다른 사용자에서 Spatial Extension을 사용하려면 다음의 sql문을 실행한다.
 "C:\Tibero\tibero5\scripts\create_gis.sql"
 
 tibero_spatial_ref_sys_base.sql 문을 실행한다.
-기본 사용자의 테이블이  SYSGIS"."SPATIAL_REF_SYS_BASE" 이므로 SYSGIS 사용자가 아닐 경우 수정해서 사용
+기본 사용자의 테이블이  "SYSGIS"."SPATIAL_REF_SYS_BASE" 이므로 SYSGIS 사용자가 아닐 경우 수정해서 사용
 
 ST_Intersects 등의 결과는 1(true), 0(false)로 반환되므로 다음과 같이 사용할 것
 select count(*) from "admin_sgg" where ST_Intersects("the_geom", st_geomfromtext('POINT(200000 450000)')) = 1;
@@ -35,7 +35,7 @@ params.put(JDBCDataStoreFactory.HOST.key, "localhost");
 params.put(JDBCDataStoreFactory.DATABASE.key, "tibero");
 params.put(JDBCDataStoreFactory.PORT.key, "8629");
 params.put(JDBCDataStoreFactory.USER.key, "sysgis");
-params.put(JDBCDataStoreFactory.PASSWD.key, "dlalsvk");
+params.put(JDBCDataStoreFactory.PASSWD.key, "tibero");
 
 // create datastore
 TiberoNGDataStoreFactory factory = new TiberoNGDataStoreFactory();
@@ -64,3 +64,18 @@ try {
 }
 
 
+================================================
+기본 TABLESPACE 설정
+================================================
+<entry key="TEMP_TABLESPACE_CLAUSE"> DEFAULT TEMPORARY TABLESPACE TEMP TEMPFILE 'C:\TmaxData\tibero6\database\tibero\temp_001.dbf' SIZE 100M AUTOEXTEND ON NEXT 100M MAXSIZE 1G EXTENT MANAGEMENT LOCAL AUTOALLOCATE </entry>
+<entry key="USER_TABLESPACE_CLAUSE"> DEFAULT TABLESPACE USR DATAFILE 'C:\TmaxData\tibero6\database\tibero\usr_001.dbf' SIZE 100M AUTOEXTEND ON NEXT 100M MAXSIZE 1G EXTENT MANAGEMENT LOCAL AUTOALLOCATE </entry>
+<entry key="SYS_DATAFILE_CLAUSE">'C:\TmaxData\tibero6\database\tibero\system_001.dbf' SIZE 100M AUTOEXTEND ON NEXT 100M MAXSIZE 1G</entry>
+<entry key="UNDO_TABLESPACE_CLAUSE">UNDO TABLESPACE UNDO DATAFILE 'C:\TmaxData\tibero6\database\tibero\undo_001.dbf' SIZE 100M AUTOEXTEND ON NEXT 100M MAXSIZE 1G EXTENT MANAGEMENT LOCAL AUTOALLOCATE </entry>
+ 
+
+> tbsql sys/tibero
+SQL> CREATE UNDO TABLESPACE undo02 DATAFILE 'C:\TmaxData\tibero6\database\tibero\undo_002.dbf' SIZE 100M AUTOEXTEND ON;
+SQL> ALTER SYSTEM SET UNDO_TABLESPACE=undo02;
+
+finally, delete original undo tablespace :ex> C:\TmaxData\tibero6\database\tibero\undo_001.dbf
+        
