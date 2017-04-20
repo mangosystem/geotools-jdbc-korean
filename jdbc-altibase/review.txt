@@ -8,15 +8,16 @@ http://atc.altibase.com/techSupport?do=techSupportView&paramCaseNo=28920
  - ALTIBASE_NLS_USE : 데이터 검색 시, 사용자에게 보여주는 문자 셋
  
 알티베이스DB에서 사용하는 캐릭터셋 확인 방법
- - 5.x 버전 : v$nls_parameters 뷰의 NLS_CHARACTERSET
+ - 5.x 버전 : select NLS_CHARACTERSET from v$nls_parameters;
  - 4.x 버전 : select name, value1 from v$property where name like 'NLS_USE';
  
 ClassName
  - 4.x 버전(Altibase.jar) : Altibase.jdbc.driver.AltibaseDriver
  - 5.x 버전(Altibase5.jar) : Altibase5.jdbc.driver.AltibaseDriver
+ - 6.x 버전(Altibase.jar) : Altibase.jdbc.driver.AltibaseDriver
  
 URL(공통)
- - jdbc:Altibase://ip:20300/mydb?encoding=KO16KSC5601
+ - jdbc:Altibase://host:20300/mydb?encoding=UTF8
  - encoding=UTF8, US7ASCII, KO16KSC5601, MS949 가능. 
 
 GeoTools 연결방법
@@ -25,6 +26,7 @@ Map<String, Object> params = new HashMap<String, Object>();
 params.put(JDBCDataStoreFactory.DBTYPE.key, "altibase");
 params.put(JDBCDataStoreFactory.HOST.key, "localhost");
 params.put(JDBCDataStoreFactory.DATABASE.key, "mydb");
+params.put(JDBCDataStoreFactory.SCHEMA.key, "SYS");
 params.put(JDBCDataStoreFactory.PORT.key, "20300");
 params.put(JDBCDataStoreFactory.USER.key, "sys");
 params.put(JDBCDataStoreFactory.PASSWD.key, "manager");
@@ -50,7 +52,7 @@ Altibase Spatial Tips
 #=================================================================
 ST_OBJECT_BUFFER_SIZE = 32000 # default : 32000 ==> 1,523
                               # min     : 32000
-                              # max     : 104857600    ==> 4,993,219     4993219
+                              # max     : 104857600    ==> 4,993,219
 
 * Server 의 시작과 종료
 C:\Server\Altibase\altibase-server-5.5.1\bin\server.bat 파일 참조
@@ -108,7 +110,7 @@ INSERT INTO "BUILDING" ( "THE_GEOM","STR","SHT","INT","FLT","DBL","fid" ) VALUES
 * Delete Features
 
 * spatial_ref_sys update
-isql -u sys -p manager -f spatial_ref_sys.sql
+isql -u sys -p manager -f altibase_spatial_ref_sys.sql
 
 ============================================
 ◎ Geometry Reference Table
@@ -176,7 +178,7 @@ ISQL> exec DropGeometryColumns( 'SYS', 'T1', 'I1' );
 
 ex)
 CREATE TABLE road ( id INTEGER, obj GEOMETRY ) ;
-INSERT INTO road VALUES (1, GEOMETRY'LINESTRING( 0 18, 10 21, 16 23, 28 26, 44 31 )') ;
+INSERT INTO road VALUES (1, GEOMFROMTEXT('LINESTRING( 0 18, 10 21, 16 23, 28 26, 44 31 )') ;
 INSERT INTO road VALUES (2, GEOMFROMTEXT('LINESTRING( 30 31, 56 34, 70 24)')) ;
 INSERT INTO road VALUES (3, LINEFROMTEXT('LINESTRING( 70 38, 32 12, 36 36)')) ;
 

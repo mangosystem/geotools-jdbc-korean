@@ -46,8 +46,6 @@ public class KairosPSDialect extends PreparedStatementSQLDialect {
 
     private KairosDialect delegate;
 
-    private WKBWriter wkbWriter = new WKBWriter();
-
     public KairosPSDialect(JDBCDataStore store, KairosDialect delegate) {
         super(store);
         this.delegate = delegate;
@@ -251,9 +249,9 @@ public class KairosPSDialect extends PreparedStatementSQLDialect {
     public void prepareGeometryValue(Geometry g, int dimension, int srid, Class binding,
             StringBuffer sql) {
         if (g != null) {
-            sql.append("ST_GEOMFROMWKB(?, " + srid + ")"); // yhl, 20131206
+            sql.append("ST_GEOMFROMWKB(?, " + srid + ")");
         } else {
-            sql.append("?");
+            super.prepareGeometryValue(g, dimension, srid, binding, sql);
         }
     }
 
@@ -267,7 +265,7 @@ public class KairosPSDialect extends PreparedStatementSQLDialect {
                 g = g.getFactory().createLineString(((LinearRing) g).getCoordinateSequence());
             }
 
-            byte[] bytes = wkbWriter.write(g);
+            byte[] bytes = new WKBWriter(dimension).write(g);
             ps.setBytes(column, bytes);
         } else {
             ps.setNull(column, Types.OTHER, "Geometry");

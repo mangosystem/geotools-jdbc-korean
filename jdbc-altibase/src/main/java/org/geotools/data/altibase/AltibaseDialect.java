@@ -33,6 +33,8 @@ import java.util.logging.Level;
 
 import org.geotools.data.jdbc.FilterToSQL;
 import org.geotools.factory.Hints;
+import org.geotools.filter.IsLessThenOrEqualToImpl;
+import org.geotools.filter.LiteralExpressionImpl;
 import org.geotools.geometry.jts.ReferencedEnvelope;
 import org.geotools.jdbc.BasicSQLDialect;
 import org.geotools.jdbc.ColumnMetadata;
@@ -43,6 +45,7 @@ import org.opengis.feature.simple.SimpleFeatureType;
 import org.opengis.feature.type.AttributeDescriptor;
 import org.opengis.feature.type.GeometryDescriptor;
 import org.opengis.feature.type.GeometryType;
+import org.opengis.filter.Filter;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
 
 import com.vividsolutions.jts.geom.Envelope;
@@ -382,7 +385,7 @@ public class AltibaseDialect extends BasicSQLDialect {
                 if (schemaName == null) {
                     schemaName = "SYS";
                 }
-                
+
                 String sridSQL = "SELECT SRID FROM GEOMETRY_COLUMNS WHERE " //
                         + "F_TABLE_SCHEMA = '" + schemaName + "' " //
                         + "AND F_TABLE_NAME = '" + tableName + "' " //
@@ -428,7 +431,7 @@ public class AltibaseDialect extends BasicSQLDialect {
                 if (schemaName == null) {
                     schemaName = "SYS";
                 }
-                
+
                 String sqlStatement = "SELECT COORD_DIMENSION FROM GEOMETRY_COLUMNS WHERE " //
                         + "F_TABLE_SCHEMA = '" + schemaName + "' " //
                         + "AND F_TABLE_NAME = '" + tableName + "' " //
@@ -656,8 +659,8 @@ public class AltibaseDialect extends BasicSQLDialect {
 
             String tableName = featureType.getTypeName();
             // remove all the geometry_column entries
-            String sql = "DELETE FROM GEOMETRY_COLUMNS" + " WHERE F_TABLE_SCHEMA = '"
-                    + schemaName + "'" + " AND F_TABLE_NAME = '" + tableName + "'";
+            String sql = "DELETE FROM GEOMETRY_COLUMNS" + " WHERE F_TABLE_SCHEMA = '" + schemaName
+                    + "'" + " AND F_TABLE_NAME = '" + tableName + "'";
             LOGGER.fine(sql);
             st.execute(sql);
         } finally {
@@ -676,7 +679,7 @@ public class AltibaseDialect extends BasicSQLDialect {
                 value = value.getFactory().createLineString(
                         ((LinearRing) value).getCoordinateSequence());
             }
-            
+
             // Altibase WKT string is too long. Max length is 32KB
             sql.append(" GEOMFROMTEXT('" + value.toText() + "')");
         }
@@ -748,35 +751,53 @@ public class AltibaseDialect extends BasicSQLDialect {
     @Override
     public void encodePostColumnCreateTable(AttributeDescriptor att, StringBuffer sql) {
         if (att.getType() instanceof GeometryType) {
-            Class<?> origBinding = att.getType().getBinding();
+            Class<?> binding = att.getType().getBinding();
+            int size = getAttributeLength(att);
+            if (size == 0 || size < 25) {
+                // #=================================================================
+                // Insert Error: Invalid length of the data type : WKB Geometry Size
+                // #=================================================================
+                // # altibase.properties: ST Object Buffer Size Properties
+                // #=================================================================
+                // ST_OBJECT_BUFFER_SIZE = 32000 # default : 32000 ==> 1,523
+                // - min : 32000
+                // - max : 104857600 ==> 4,993,219
 
-            // altibase.properties
-            // #=================================================================
-            // # ST Object Buffer Size Properties
-            // #=================================================================
-            // ST_OBJECT_BUFFER_SIZE = 32000 # default : 32000 ==> 1,523
-            // # min : 32000
-            // # max : 104857600 ==> 4,993,219
-
-            // altibase.properties
-            Integer fieldSize = 32000;
-            // Insert Error: Invalid length of the data type : WKB Geometry Size
-            if (origBinding.isAssignableFrom(MultiPolygon.class)) {
-                fieldSize = 32000 * 10;
-            } else if (origBinding.isAssignableFrom(Polygon.class)) {
-                fieldSize = 32000 * 10;
-            } else if (origBinding.isAssignableFrom(MultiLineString.class)) {
-                fieldSize = 32000 * 2;
-            } else if (origBinding.isAssignableFrom(LineString.class)) {
-                fieldSize = 32000;
-            } else if (origBinding.isAssignableFrom(MultiPoint.class)) {
-                fieldSize = 32000;
-            } else if (origBinding.isAssignableFrom(Point.class)) {
-                fieldSize = 100;
+                size = 32000;
+                if (binding.isAssignableFrom(MultiPolygon.class)) {
+                    size = 32000 * 10;
+                } else if (binding.isAssignableFrom(Polygon.class)) {
+                    size = 32000 * 10;
+                } else if (binding.isAssignableFrom(MultiLineString.class)) {
+                    size = 32000 * 2;
+                } else if (binding.isAssignableFrom(LineString.class)) {
+                    size = 32000;
+                } else if (binding.isAssignableFrom(MultiPoint.class)) {
+                    size = 25 * 10;
+                } else if (binding.isAssignableFrom(Point.class)) {
+                    size = 25;
+                }
             }
-
-            sql.append("(").append(fieldSize).append(")");
+            sql.append("(").append(size).append(")");
         }
+    }
+
+    int getAttributeLength(AttributeDescriptor descriptor) {
+        int length = 0;
+        List<Filter> filterList = descriptor.getType().getRestrictions();
+        for (Filter filter : filterList) {
+            if (filter instanceof IsLessThenOrEqualToImpl) {
+                IsLessThenOrEqualToImpl ite = (IsLessThenOrEqualToImpl) filter;
+                LiteralExpressionImpl exp = (LiteralExpressionImpl) ite.getExpression2();
+                try {
+                    length = Integer.valueOf(exp.getValue().toString());
+                    break;
+                } catch (NumberFormatException e) {
+                    LOGGER.log(Level.WARNING, e.getMessage(), e);
+                }
+            }
+        }
+        return length;
     }
 
     Map<String, Integer> getColumnMeta(DatabaseMetaData metadata, String schemaName,

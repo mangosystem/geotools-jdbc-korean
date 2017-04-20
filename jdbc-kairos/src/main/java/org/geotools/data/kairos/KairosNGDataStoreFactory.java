@@ -47,7 +47,7 @@ public class KairosNGDataStoreFactory extends JDBCDataStoreFactory {
     /** parameter that enables estimated extends instead of exact ones */
     public static final Param ESTIMATED_EXTENTS = new Param("Estimated extends", Boolean.class, "Use the spatial index information to quickly get an estimate of the data bounds", false, Boolean.FALSE);
 
-    /** Wheter a prepared statements based dialect should be used, or not */
+    /** Whether a prepared statements based dialect should be used, or not */
     public static final Param PREPARED_STATEMENTS = new Param("preparedStatements", Boolean.class, "Use prepared statements", false, Boolean.TRUE);
 
     @Override

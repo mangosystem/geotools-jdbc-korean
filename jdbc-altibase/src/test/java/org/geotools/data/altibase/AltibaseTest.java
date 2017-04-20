@@ -1,4 +1,4 @@
-package org.geotools.data.tibero;
+package org.geotools.data.altibase;
 
 import java.io.File;
 import java.io.IOException;
@@ -15,6 +15,7 @@ import org.geotools.data.DefaultTransaction;
 import org.geotools.data.FeatureWriter;
 import org.geotools.data.Query;
 import org.geotools.data.Transaction;
+import org.geotools.data.simple.SimpleFeatureCollection;
 import org.geotools.data.simple.SimpleFeatureIterator;
 import org.geotools.data.simple.SimpleFeatureSource;
 import org.geotools.data.simple.SimpleFeatureStore;
@@ -34,19 +35,19 @@ import org.opengis.referencing.NoSuchAuthorityCodeException;
 import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.io.ParseException;
 
-public class TiberoTest {
-    protected static final Logger LOGGER = Logging.getLogger(TiberoTest.class);
+public class AltibaseTest {
+    protected static final Logger LOGGER = Logging.getLogger(AltibaseTest.class);
 
     public static void main(String[] args) throws IOException, NoSuchAuthorityCodeException,
             FactoryException, ParseException {
-        new TiberoTest().execute();
+        new AltibaseTest().execute();
     }
 
     private void execute() throws IOException, NoSuchAuthorityCodeException, FactoryException {
         Map<String, Object> params = getConnection();
 
         // create datastore
-        TiberoNGDataStoreFactory factory = new TiberoNGDataStoreFactory();
+        AltibaseNGDataStoreFactory factory = new AltibaseNGDataStoreFactory();
         DataStore dataStore = factory.createDataStore(params);
 
         // get layers
@@ -64,7 +65,7 @@ public class TiberoTest {
         }
 
         // upload shapefile: road point line polygon
-        String typeName = "point";
+        String typeName = "polygon";
         DataStore shpStore = getShapefileDataStore("C:/data/road");
         SimpleFeatureSource shp_sfs = shpStore.getFeatureSource(typeName);
         System.out.println(shp_sfs.getName().toString() + " = " + shp_sfs.getCount(Query.ALL));
@@ -73,11 +74,11 @@ public class TiberoTest {
                 .getTypeName());
 
         System.out.println(out.getName().toString() + " inserted = " + out.getCount(Query.ALL));
-        
+
         // filter test
         String geom = out.getSchema().getGeometryDescriptor().getLocalName();
         Geometry bounds = JTS.toGeometry(out.getBounds());
-        
+
         FilterFactory2 ff = CommonFactoryFinder.getFilterFactory2(null);
         Filter filter = ff.intersects(ff.property(geom), ff.literal(bounds));
         System.out.println("Intersects = " + out.getFeatures(filter).size());
@@ -91,6 +92,13 @@ public class TiberoTest {
             String targetName) throws IOException {
         int flushInterval = 1000;
         boolean overwrite = true;
+
+        // Altibase Geometry 필드 크기 최적화: Retype FeatureCollection
+        int maxGeomSize = getMaximumGeometrySize(source.getFeatures(Filter.INCLUDE));
+
+        // 레이어이름 대소문자 전환
+
+        // 좌표변환
 
         try {
             SimpleFeatureType existType = targetStore.getSchema(targetName);
@@ -155,6 +163,24 @@ public class TiberoTest {
         return target;
     }
 
+    private int getMaximumGeometrySize(SimpleFeatureCollection source) throws IOException {
+        int max_num_points = Integer.MIN_VALUE;
+        SimpleFeatureIterator featureIter = source.features();
+        try {
+            while (featureIter.hasNext()) {
+                SimpleFeature feature = featureIter.next();
+                Geometry geometry = (Geometry) feature.getDefaultGeometry();
+                int num_points = geometry.getNumPoints();
+                max_num_points = Math.max(max_num_points, num_points);
+            }
+        } finally {
+            featureIter.close();
+        }
+
+        int max = max_num_points == 1 ? 25 : max_num_points * 25;
+        return Math.min(max, 104857600); // Limit Max ST_OBJECT_BUFFER_SIZE
+    }
+
     @SuppressWarnings("unused")
     private void printFeatures(SimpleFeatureSource sfs) throws IOException {
         SimpleFeatureIterator featureIter = null;
@@ -171,14 +197,16 @@ public class TiberoTest {
 
     private Map<String, Object> getConnection() {
         Map<String, Object> params = new HashMap<String, Object>();
-        params.put(JDBCDataStoreFactory.DBTYPE.key, "tibero");
+        params.put(JDBCDataStoreFactory.DBTYPE.key, "altibase");
         params.put(JDBCDataStoreFactory.HOST.key, "localhost");
-        params.put(JDBCDataStoreFactory.DATABASE.key, "tibero");
-        params.put(JDBCDataStoreFactory.SCHEMA.key, "SYSGIS");
-        params.put(JDBCDataStoreFactory.PORT.key, "8629");
-        params.put(JDBCDataStoreFactory.USER.key, "sysgis");
-        params.put(JDBCDataStoreFactory.PASSWD.key, "tibero");
-        params.put("preparedStatements", Boolean.TRUE);
+        params.put(JDBCDataStoreFactory.DATABASE.key, "mydb");
+        params.put(JDBCDataStoreFactory.SCHEMA.key, "SYS");
+        params.put(JDBCDataStoreFactory.PORT.key, "20300");
+        params.put(JDBCDataStoreFactory.USER.key, "sys");
+        params.put(JDBCDataStoreFactory.PASSWD.key, "manager");
+
+        // Altibase ERROR: preparedStatements
+        params.put("preparedStatements", Boolean.FALSE); //
         return params;
     }
 

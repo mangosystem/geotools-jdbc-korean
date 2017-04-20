@@ -33,7 +33,7 @@ public class AltibaseNGDataStoreFactory extends JDBCDataStoreFactory {
     public static final Param DATABASE = new Param("database", String.class, "Database", false, "mydb");
 
     /** parameter for database encoding */
-    public static final Param ENCODING = new Param("encoding", String.class, "Encoding", true, "KO16KSC5601");
+    public static final Param ENCODING = new Param("encoding", String.class, "Encoding", false, "UTF-8");
 
     /** parameter for database schema */
     public static final Param SCHEMA = new Param("schema", String.class, "Schema", true, "SYS");
@@ -50,8 +50,8 @@ public class AltibaseNGDataStoreFactory extends JDBCDataStoreFactory {
     /** parameter that enables estimated extends instead of exact ones */
     public static final Param ESTIMATED_EXTENTS = new Param("Estimated extends", Boolean.class, "Use the spatial index information to quickly get an estimate of the data bounds", false, Boolean.FALSE);
 
-    /** Wheter a prepared statements based dialect should be used, or not */
-    public static final Param PREPARED_STATEMENTS = new Param("preparedStatements", Boolean.class, "Use prepared statements", false, Boolean.TRUE);
+    /** Whether a prepared statements based dialect should be used, or not */
+    public static final Param PREPARED_STATEMENTS = new Param("preparedStatements", Boolean.class, "Use prepared statements", false, Boolean.FALSE);
 
     @Override
     protected SQLDialect createSQLDialect(JDBCDataStore dataStore) {
@@ -162,7 +162,7 @@ public class AltibaseNGDataStoreFactory extends JDBCDataStoreFactory {
 
     @Override
     protected String getValidationQuery() {
-        return "SELECT SYSDATE FROM DUAL";
+        return "SELECT 1 FROM DUAL";
     }
 
     @Override

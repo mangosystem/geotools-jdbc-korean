@@ -40,13 +40,12 @@ import com.vividsolutions.jts.geom.Envelope;
 import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.geom.GeometryFactory;
 import com.vividsolutions.jts.geom.LinearRing;
+import com.vividsolutions.jts.io.ByteOrderValues;
 import com.vividsolutions.jts.io.WKBWriter;
 
 public class AltibasePSDialect extends PreparedStatementSQLDialect {
 
     private AltibaseDialect delegate;
-
-    private WKBWriter wkbWriter = new WKBWriter();
 
     public AltibasePSDialect(JDBCDataStore store, AltibaseDialect delegate) {
         super(store);
@@ -251,9 +250,9 @@ public class AltibasePSDialect extends PreparedStatementSQLDialect {
     public void prepareGeometryValue(Geometry g, int dimension, int srid, Class binding,
             StringBuffer sql) {
         if (g != null) {
-            sql.append("GeomFromWKB(?)");
+            sql.append("GEOMFROMWKB(?)");
         } else {
-            sql.append("?");
+            super.prepareGeometryValue(g, dimension, srid, binding, sql);
         }
     }
 
@@ -267,7 +266,7 @@ public class AltibasePSDialect extends PreparedStatementSQLDialect {
                 g = g.getFactory().createLineString(((LinearRing) g).getCoordinateSequence());
             }
 
-            byte[] bytes = wkbWriter.write(g);
+            byte[] bytes = new WKBWriter(dimension, ByteOrderValues.LITTLE_ENDIAN).write(g);
             ps.setBytes(column, bytes);
         } else {
             ps.setNull(column, Types.OTHER, "Geometry");

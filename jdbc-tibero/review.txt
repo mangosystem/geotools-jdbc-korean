@@ -3,7 +3,8 @@
 Tibero_6_FS06_win_64_20170310.exe
 ================================================
 최초 접속시 SYS로 접속하여 다음과 같이 SYSGIS 계정의 비밀번호를 설정한다.
- - ALTER USER SYSGIS IDENTIFIED BY tibero;
+   > tbsql sys/tibero
+SQL> ALTER USER SYSGIS IDENTIFIED BY tibero;
 
 만약 다른 사용자에서 Spatial Extension을 사용하려면 다음의 sql문을 실행한다.
 "C:\Tibero\tibero5\scripts\create_gis.sql"
