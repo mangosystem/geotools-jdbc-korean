@@ -6,6 +6,7 @@ Tibero_6_FS06_win_64_20170310.exe
    > tbsql sys/tibero
 SQL> ALTER USER SYSGIS IDENTIFIED BY tibero;
 
+   > tbsql sysgis/tibero
 만약 다른 사용자에서 Spatial Extension을 사용하려면 다음의 sql문을 실행한다.
 "C:\Tibero\tibero5\scripts\create_gis.sql"
 
@@ -28,8 +29,10 @@ gisloader FishnetOp.shp fishnet
 tbloader userid=tibero/manager control=FishnetOp.ctl
 
 ================================================
-geotools
+geotools  TiberoNGDataStoreFactory
 ================================================
+jdbc:tibero:thin:@host:port:database
+
 Map<String, Object> params = new HashMap<String, Object>();
 params.put(JDBCDataStoreFactory.DBTYPE.key, "tibero");
 params.put(JDBCDataStoreFactory.HOST.key, "localhost");

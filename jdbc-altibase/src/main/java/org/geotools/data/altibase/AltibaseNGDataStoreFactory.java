@@ -30,13 +30,15 @@ public class AltibaseNGDataStoreFactory extends JDBCDataStoreFactory {
     public static final Param DBTYPE = new Param("dbtype", String.class, "Type", true, "altibase");
 
     /** parameter for database instance */
-    public static final Param DATABASE = new Param("database", String.class, "Database", false, "mydb");
+    public static final Param DATABASE = new Param("database", String.class, "Database", false,
+            "mydb");
 
     /** parameter for database encoding */
-    public static final Param ENCODING = new Param("encoding", String.class, "Encoding", false, "UTF-8");
+    public static final Param ENCODING = new Param("encoding", String.class, "Encoding", false,
+            "UTF-8");
 
     /** parameter for database schema */
-    public static final Param SCHEMA = new Param("schema", String.class, "Schema", true, "SYS");
+    public static final Param SCHEMA = new Param("schema", String.class, "Schema", false, "SYS");
 
     /** parameter for database port */
     public static final Param PORT = new Param("port", Integer.class, "Port", true, 20300);
@@ -45,13 +47,17 @@ public class AltibaseNGDataStoreFactory extends JDBCDataStoreFactory {
     public static final Param USER = new Param("user", String.class, "User", true, "sys");
 
     /** enables using && in bbox queries */
-    public static final Param LOOSEBBOX = new Param("Loose bbox", Boolean.class, "Perform only primary filter on bbox", false, Boolean.TRUE);
+    public static final Param LOOSEBBOX = new Param("Loose bbox", Boolean.class,
+            "Perform only primary filter on bbox", false, Boolean.TRUE);
 
     /** parameter that enables estimated extends instead of exact ones */
-    public static final Param ESTIMATED_EXTENTS = new Param("Estimated extends", Boolean.class, "Use the spatial index information to quickly get an estimate of the data bounds", false, Boolean.FALSE);
+    public static final Param ESTIMATED_EXTENTS = new Param("Estimated extends", Boolean.class,
+            "Use the spatial index information to quickly get an estimate of the data bounds",
+            false, Boolean.FALSE);
 
     /** Whether a prepared statements based dialect should be used, or not */
-    public static final Param PREPARED_STATEMENTS = new Param("preparedStatements", Boolean.class, "Use prepared statements", false, Boolean.FALSE);
+    public static final Param PREPARED_STATEMENTS = new Param("preparedStatements", Boolean.class,
+            "Use prepared statements", false, Boolean.FALSE);
 
     @Override
     protected SQLDialect createSQLDialect(JDBCDataStore dataStore) {
@@ -121,12 +127,8 @@ public class AltibaseNGDataStoreFactory extends JDBCDataStoreFactory {
 
         // setup the ps dialect if need be
         Boolean usePs = (Boolean) PREPARED_STATEMENTS.lookUp(params);
-        if (usePs == null) {
+        if (usePs != null && Boolean.TRUE.equals(usePs)) {
             dataStore.setSQLDialect(new AltibasePSDialect(dataStore, dialect));
-        } else {
-            if (Boolean.TRUE.equals(usePs)) {
-                dataStore.setSQLDialect(new AltibasePSDialect(dataStore, dialect));
-            }
         }
 
         // primary key finder

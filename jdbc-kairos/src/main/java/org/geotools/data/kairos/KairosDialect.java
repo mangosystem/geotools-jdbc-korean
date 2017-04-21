@@ -554,8 +554,8 @@ public class KairosDialect extends BasicSQLDialect {
         overrides.put(new Integer(Types.BOOLEAN), "BOOL");
         overrides.put(new Integer(Types.SMALLINT), "INTEGER");
         overrides.put(new Integer(Types.INTEGER), "INTEGER");
-        overrides.put(new Integer(Types.REAL), "REAL");
-        overrides.put(new Integer(Types.FLOAT), "DOUBLE");
+        overrides.put(new Integer(Types.REAL), "FLOAT");
+        overrides.put(new Integer(Types.FLOAT), "FLOAT");
         overrides.put(new Integer(Types.DOUBLE), "DOUBLE");
         overrides.put(new Integer(Types.DECIMAL), "NUMBER");
         overrides.put(new Integer(Types.NUMERIC), "NUMBER");
@@ -787,6 +787,11 @@ public class KairosDialect extends BasicSQLDialect {
     @Override
     public int getDefaultVarcharSize() {
         return 255;
+    }
+
+    @Override
+    public String[] getDesiredTablesType() {
+        return new String[] { "TABLE", "VIEW", "MATERIALIZED VIEW" };
     }
 
     @Override

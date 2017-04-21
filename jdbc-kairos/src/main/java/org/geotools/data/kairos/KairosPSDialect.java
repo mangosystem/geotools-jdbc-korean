@@ -228,6 +228,11 @@ public class KairosPSDialect extends PreparedStatementSQLDialect {
     }
 
     @Override
+    public String[] getDesiredTablesType() {
+        return delegate.getDesiredTablesType();
+    }
+
+    @Override
     public void encodePostColumnCreateTable(AttributeDescriptor att, StringBuffer sql) {
         delegate.encodePostColumnCreateTable(att, sql);
     }

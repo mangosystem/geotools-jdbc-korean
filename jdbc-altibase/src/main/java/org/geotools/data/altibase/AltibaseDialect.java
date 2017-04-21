@@ -321,6 +321,10 @@ public class AltibaseDialect extends BasicSQLDialect {
         ResultSet rs = null;
 
         try {
+            if (schemaName == null || schemaName.isEmpty()) {
+                schemaName = "SYS";
+            }
+            
             StringBuffer sb = new StringBuffer();
             sb.append("SELECT GEOMETRYTYPE(");
             sb.append("\"").append(columnName).append("\")");
@@ -350,6 +354,10 @@ public class AltibaseDialect extends BasicSQLDialect {
         String tableName = columnMetaData.getString("TABLE_NAME");
         String columnName = columnMetaData.getString("COLUMN_NAME");
         String schemaName = columnMetaData.getString("TABLE_SCHEM");
+        
+        if (schemaName == null || schemaName.isEmpty()) {
+            schemaName = "SYS";
+        }
 
         String sql = "SELECT udt_name FROM information_schema.columns " + " WHERE table_schema = '"
                 + schemaName + "' " + " AND table_name = '" + tableName + "' "
@@ -382,7 +390,7 @@ public class AltibaseDialect extends BasicSQLDialect {
         try {
             // try geometry_columns
             try {
-                if (schemaName == null) {
+                if (schemaName == null || schemaName.isEmpty()) {
                     schemaName = "SYS";
                 }
 
@@ -428,7 +436,7 @@ public class AltibaseDialect extends BasicSQLDialect {
         try {
             // try geometry_columns
             try {
-                if (schemaName == null) {
+                if (schemaName == null || schemaName.isEmpty()) {
                     schemaName = "SYS";
                 }
 
@@ -539,8 +547,15 @@ public class AltibaseDialect extends BasicSQLDialect {
 
     @Override
     public void registerSqlTypeToSqlTypeNameOverrides(Map<Integer, String> overrides) {
-        overrides.put(Types.VARCHAR, "VARCHAR");
-        overrides.put(Types.BOOLEAN, "BOOL");
+        overrides.put(new Integer(Types.VARCHAR), "VARCHAR");
+        overrides.put(new Integer(Types.BOOLEAN), "BOOL");
+        overrides.put(new Integer(Types.SMALLINT), "INTEGER");
+        overrides.put(new Integer(Types.INTEGER), "INTEGER");
+        overrides.put(new Integer(Types.REAL), "FLOAT");
+        overrides.put(new Integer(Types.FLOAT), "FLOAT");
+        overrides.put(new Integer(Types.DOUBLE), "DOUBLE");
+        overrides.put(new Integer(Types.DECIMAL), "NUMBER");
+        overrides.put(new Integer(Types.NUMERIC), "NUMBER");
     }
 
     @Override
@@ -562,6 +577,9 @@ public class AltibaseDialect extends BasicSQLDialect {
         Statement st = null;
         try {
             st = cx.createStatement();
+            if (schemaName == null || schemaName.isEmpty()) {
+                schemaName = "SYS";
+            }
 
             // register all geometry columns in the database
             for (AttributeDescriptor att : featureType.getAttributeDescriptors()) {
@@ -653,7 +671,7 @@ public class AltibaseDialect extends BasicSQLDialect {
             throws SQLException {
         Statement st = cx.createStatement();
         try {
-            if (schemaName == null) {
+            if (schemaName == null || schemaName.isEmpty()) {
                 schemaName = "SYS";
             }
 
@@ -746,6 +764,11 @@ public class AltibaseDialect extends BasicSQLDialect {
     @Override
     public int getDefaultVarcharSize() {
         return 255;
+    }
+
+    @Override
+    public String[] getDesiredTablesType() {
+        return new String[] { "TABLE", "VIEW", "MATERIALIZED VIEW" };
     }
 
     @Override

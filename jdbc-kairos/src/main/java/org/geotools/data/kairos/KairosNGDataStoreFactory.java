@@ -30,10 +30,11 @@ public class KairosNGDataStoreFactory extends JDBCDataStoreFactory {
     public static final Param DBTYPE = new Param("dbtype", String.class, "Type", true, "kairos");
 
     /** parameter for database instance */
-    public static final Param DATABASE = new Param("database", String.class, "Database", true, "test");
+    public static final Param DATABASE = new Param("database", String.class, "Database", true,
+            "test");
 
     /** parameter for database schema */
-    public static final Param SCHEMA = new Param("schema", String.class, "Schema", true, "root");
+    public static final Param SCHEMA = new Param("schema", String.class, "Schema", false, "root");
 
     /** parameter for database port */
     public static final Param PORT = new Param("port", Integer.class, "Port", true, 5000);
@@ -42,13 +43,17 @@ public class KairosNGDataStoreFactory extends JDBCDataStoreFactory {
     public static final Param USER = new Param("user", String.class, "User", true, "root");
 
     /** enables using && in bbox queries */
-    public static final Param LOOSEBBOX = new Param("Loose bbox", Boolean.class, "Perform only primary filter on bbox", false, Boolean.TRUE);
+    public static final Param LOOSEBBOX = new Param("Loose bbox", Boolean.class,
+            "Perform only primary filter on bbox", false, Boolean.TRUE);
 
     /** parameter that enables estimated extends instead of exact ones */
-    public static final Param ESTIMATED_EXTENTS = new Param("Estimated extends", Boolean.class, "Use the spatial index information to quickly get an estimate of the data bounds", false, Boolean.FALSE);
+    public static final Param ESTIMATED_EXTENTS = new Param("Estimated extends", Boolean.class,
+            "Use the spatial index information to quickly get an estimate of the data bounds",
+            false, Boolean.FALSE);
 
     /** Whether a prepared statements based dialect should be used, or not */
-    public static final Param PREPARED_STATEMENTS = new Param("preparedStatements", Boolean.class, "Use prepared statements", false, Boolean.TRUE);
+    public static final Param PREPARED_STATEMENTS = new Param("preparedStatements", Boolean.class,
+            "Use prepared statements", false, Boolean.TRUE);
 
     @Override
     protected SQLDialect createSQLDialect(JDBCDataStore dataStore) {
@@ -72,6 +77,15 @@ public class KairosNGDataStoreFactory extends JDBCDataStoreFactory {
     @Override
     protected String getDriverClassName() {
         return "kr.co.realtimetech.kairos.jdbc.kairosDriver";
+    }
+
+    @Override
+    public boolean canProcess(Map params) {
+        if (!super.canProcess(params)) {
+            return false; // was not in agreement with getParametersInfo
+        }
+
+        return checkDBType(params);
     }
 
     @Override
@@ -109,12 +123,8 @@ public class KairosNGDataStoreFactory extends JDBCDataStoreFactory {
 
         // setup the ps dialect if need be
         Boolean usePs = (Boolean) PREPARED_STATEMENTS.lookUp(params);
-        if (usePs == null) {
+        if (usePs != null && Boolean.TRUE.equals(usePs)) {
             dataStore.setSQLDialect(new KairosPSDialect(dataStore, dialect));
-        } else {
-            if (Boolean.TRUE.equals(usePs)) {
-                dataStore.setSQLDialect(new KairosPSDialect(dataStore, dialect));
-            }
         }
 
         return dataStore;

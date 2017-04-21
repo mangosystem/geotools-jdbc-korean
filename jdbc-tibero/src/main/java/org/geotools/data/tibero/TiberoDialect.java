@@ -150,8 +150,31 @@ public class TiberoDialect extends BasicSQLDialect {
             return false;
         }
 
+        // tables in geometry_columns
+        if (schemaName == null || schemaName.isEmpty()) {
+            schemaName = "SYSGIS";
+        }
+
+        StringBuffer sql = new StringBuffer();
+        sql.append("SELECT F_TABLE_NAME FROM GEOMETRY_COLUMNS_BASE WHERE ");
+        sql.append(" F_TABLE_SCHEMA = '").append(schemaName).append("' ");
+        sql.append(" AND F_TABLE_NAME = '").append(tableName).append("'");
+
+        Statement statement = null;
+        ResultSet result = null;
+        try {
+            statement = cx.createStatement();
+            result = statement.executeQuery(sql.toString());
+            if (result.next()) {
+                return true;
+            }
+        } finally {
+            dataStore.closeSafe(result);
+            dataStore.closeSafe(statement);
+        }
+
         // others?
-        return true;
+        return false;
     }
 
     ThreadLocal<WKBAttributeIO> wkbReader = new ThreadLocal<WKBAttributeIO>();
@@ -333,6 +356,10 @@ public class TiberoDialect extends BasicSQLDialect {
         ResultSet result = null;
 
         try {
+            if (schemaName == null || schemaName.isEmpty()) {
+                schemaName = "SYSGIS";
+            }
+
             String sqlStatement = "SELECT F_GEOMETRY_TYPE FROM " + gTableName + " WHERE " //
                     + "F_TABLE_SCHEMA = '" + schemaName + "' " //
                     + "AND F_TABLE_NAME = '" + tableName + "' " //
@@ -356,10 +383,13 @@ public class TiberoDialect extends BasicSQLDialect {
     @Override
     public void handleUserDefinedType(ResultSet columnMetaData, ColumnMetadata metadata,
             Connection cx) throws SQLException {
-
         String tableName = columnMetaData.getString("TABLE_NAME");
         String columnName = columnMetaData.getString("COLUMN_NAME");
         String schemaName = columnMetaData.getString("TABLE_SCHEM");
+
+        if (schemaName == null || schemaName.isEmpty()) {
+            schemaName = "SYSGIS";
+        }
 
         String sql = "SELECT udt_name FROM information_schema.columns " + " WHERE table_schema = '"
                 + schemaName + "' " + " AND table_name = '" + tableName + "' "
@@ -391,7 +421,7 @@ public class TiberoDialect extends BasicSQLDialect {
         try {
             // try geometry_columns
             try {
-                if (schemaName == null) {
+                if (schemaName == null || schemaName.isEmpty()) {
                     schemaName = "SYSGIS";
                 }
 
@@ -434,7 +464,7 @@ public class TiberoDialect extends BasicSQLDialect {
         try {
             // try geometry_columns
             try {
-                if (schemaName == null) {
+                if (schemaName == null || schemaName.isEmpty()) {
                     schemaName = "SYSGIS";
                 }
 
@@ -551,12 +581,15 @@ public class TiberoDialect extends BasicSQLDialect {
 
     @Override
     public void registerSqlTypeToSqlTypeNameOverrides(Map<Integer, String> overrides) {
-        overrides.put(Types.VARCHAR, "VARCHAR");
-        overrides.put(Types.BOOLEAN, "BOOL");
-        overrides.put(Types.SMALLINT, "INTEGER");
-        overrides.put(Types.INTEGER, "INTEGER");
-        overrides.put(Types.FLOAT, "NUMBER");
-        overrides.put(Types.DOUBLE, "NUMBER");
+        overrides.put(new Integer(Types.VARCHAR), "VARCHAR");
+        overrides.put(new Integer(Types.BOOLEAN), "BOOL");
+        overrides.put(new Integer(Types.SMALLINT), "INTEGER");
+        overrides.put(new Integer(Types.INTEGER), "INTEGER");
+        overrides.put(new Integer(Types.REAL), "FLOAT");
+        overrides.put(new Integer(Types.FLOAT), "FLOAT");
+        overrides.put(new Integer(Types.DOUBLE), "DOUBLE");
+        overrides.put(new Integer(Types.DECIMAL), "NUMBER");
+        overrides.put(new Integer(Types.NUMERIC), "NUMBER");
     }
 
     @Override
@@ -581,6 +614,9 @@ public class TiberoDialect extends BasicSQLDialect {
         Statement st = null;
         try {
             st = cx.createStatement();
+            if (schemaName == null || schemaName.isEmpty()) {
+                schemaName = "SYSGIS";
+            }
 
             // register all geometry columns in the database
             for (AttributeDescriptor att : featureType.getAttributeDescriptors()) {
@@ -680,7 +716,7 @@ public class TiberoDialect extends BasicSQLDialect {
             throws SQLException {
         Statement st = cx.createStatement();
         try {
-            if (schemaName == null) {
+            if (schemaName == null || schemaName.isEmpty()) {
                 schemaName = "SYSGIS";
             }
 
@@ -778,6 +814,11 @@ public class TiberoDialect extends BasicSQLDialect {
     @Override
     public int getDefaultVarcharSize() {
         return 255;
+    }
+
+    @Override
+    public String[] getDesiredTablesType() {
+        return new String[] { "TABLE", "VIEW", "MATERIALIZED VIEW" };
     }
 
     @Override

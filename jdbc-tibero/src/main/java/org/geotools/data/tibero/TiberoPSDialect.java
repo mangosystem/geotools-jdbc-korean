@@ -229,6 +229,11 @@ public class TiberoPSDialect extends PreparedStatementSQLDialect {
     }
 
     @Override
+    public String[] getDesiredTablesType() {
+        return delegate.getDesiredTablesType();
+    }
+
+    @Override
     public void encodePostColumnCreateTable(AttributeDescriptor att, StringBuffer sql) {
         delegate.encodePostColumnCreateTable(att, sql);
     }
