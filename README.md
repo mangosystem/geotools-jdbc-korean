@@ -1,6 +1,6 @@
 ## GeoTools-jdbc-Korean
 
-The Development of Domestic Spatial DBMS Driver supporting java based Open Source GIS(GeoServer, uDig)
+Korean Spatial DBMS Driver for GeoTools, GeoServer, uDig GIS.
 
 ### DataStore plugins:
 * Altibase Plugin( http://www.mangosystem.com:8080/gxt/docs/data/database/altibase.html )
@@ -8,6 +8,10 @@ The Development of Domestic Spatial DBMS Driver supporting java based Open Sourc
 * Kairos Plugin( http://www.mangosystem.com:8080/gxt/docs/data/database/kairos.html )
 * NGI format
 * ESRI Personal GDB (Microsoft Access Database)
+
+### Gallery
+
+![screenshot](https://github.com/mapplus/geotools-jdbc-korean/blob/master/docs/images/gt-jdbc-korean.png?width=800)
 
 ### License
 * OSI-Approved Open Source :: GNU Library or Lesser General Public License version 2.0 (LGPLv2)
