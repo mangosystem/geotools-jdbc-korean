@@ -9,6 +9,13 @@ Korean Spatial DBMS Driver for GeoTools, GeoServer, uDig GIS.
 * NGI format
 * ESRI Personal GDB (Microsoft Access Database)
 
+### Download
+* Visit [SourceForge](https://sourceforge.net/projects/gt-jdbc-korean/)
+* GeoServer
+ * Download jar files
+ * Copy these files to the WEB-INF/lib directory of the GeoServer installation.
+ * Restart GeoServer
+
 ### Gallery
 
 ![screenshot](https://github.com/mapplus/geotools-jdbc-korean/blob/master/docs/images/gt-jdbc-korean.png?width=800)
