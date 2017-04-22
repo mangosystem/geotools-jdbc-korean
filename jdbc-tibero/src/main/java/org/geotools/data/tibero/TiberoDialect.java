@@ -587,7 +587,7 @@ public class TiberoDialect extends BasicSQLDialect {
         overrides.put(new Integer(Types.INTEGER), "INTEGER");
         overrides.put(new Integer(Types.REAL), "FLOAT");
         overrides.put(new Integer(Types.FLOAT), "FLOAT");
-        overrides.put(new Integer(Types.DOUBLE), "DOUBLE");
+        overrides.put(new Integer(Types.DOUBLE), "NUMBER");
         overrides.put(new Integer(Types.DECIMAL), "NUMBER");
         overrides.put(new Integer(Types.NUMERIC), "NUMBER");
     }
