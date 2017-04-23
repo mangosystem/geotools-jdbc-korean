@@ -563,6 +563,7 @@ public class TiberoDialect extends BasicSQLDialect {
         // jdbc metadata for geom columns reports DATA_TYPE=1111=Types.OTHER
         mappings.put(Short.class, new Integer(Types.SMALLINT));
         mappings.put(Integer.class, new Integer(Types.INTEGER));
+        mappings.put(Long.class, new Integer(Types.BIGINT));
         mappings.put(Float.class, new Integer(Types.REAL));
         mappings.put(Double.class, new Integer(Types.DOUBLE));
         mappings.put(Geometry.class, new Integer(Types.OTHER));
@@ -585,6 +586,7 @@ public class TiberoDialect extends BasicSQLDialect {
         overrides.put(new Integer(Types.BOOLEAN), "BOOL");
         overrides.put(new Integer(Types.SMALLINT), "INTEGER");
         overrides.put(new Integer(Types.INTEGER), "INTEGER");
+        overrides.put(new Integer(Types.BIGINT), "INTEGER");
         overrides.put(new Integer(Types.REAL), "FLOAT");
         overrides.put(new Integer(Types.FLOAT), "FLOAT");
         overrides.put(new Integer(Types.DOUBLE), "NUMBER");

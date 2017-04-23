@@ -64,7 +64,7 @@ public class TiberoTest {
         }
 
         // upload shapefile: road point line polygon
-        String typeName = "point";
+        String typeName = "road";
         DataStore shpStore = getShapefileDataStore("C:/data/road");
         SimpleFeatureSource shp_sfs = shpStore.getFeatureSource(typeName);
         System.out.println(shp_sfs.getName().toString() + " = " + shp_sfs.getCount(Query.ALL));
@@ -73,11 +73,11 @@ public class TiberoTest {
                 .getTypeName());
 
         System.out.println(out.getName().toString() + " inserted = " + out.getCount(Query.ALL));
-        
+
         // filter test
         String geom = out.getSchema().getGeometryDescriptor().getLocalName();
         Geometry bounds = JTS.toGeometry(out.getBounds());
-        
+
         FilterFactory2 ff = CommonFactoryFinder.getFilterFactory2(null);
         Filter filter = ff.intersects(ff.property(geom), ff.literal(bounds));
         System.out.println("Intersects = " + out.getFeatures(filter).size());
@@ -178,7 +178,7 @@ public class TiberoTest {
         params.put(JDBCDataStoreFactory.PORT.key, "8629");
         params.put(JDBCDataStoreFactory.USER.key, "sysgis");
         params.put(JDBCDataStoreFactory.PASSWD.key, "tibero");
-        params.put("preparedStatements", Boolean.TRUE);
+        params.put(TiberoNGDataStoreFactory.PREPARED_STATEMENTS.key, Boolean.TRUE);
         return params;
     }
 

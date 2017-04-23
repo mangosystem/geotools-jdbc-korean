@@ -64,8 +64,8 @@ public class AltibaseTest {
             }
         }
 
-        // upload shapefile: road point line polygon
-        String typeName = "polygon";
+        // upload shapefile: road point line polygon road_network
+        String typeName = "road_network";
         DataStore shpStore = getShapefileDataStore("C:/data/road");
         SimpleFeatureSource shp_sfs = shpStore.getFeatureSource(typeName);
         System.out.println(shp_sfs.getName().toString() + " = " + shp_sfs.getCount(Query.ALL));
@@ -95,6 +95,7 @@ public class AltibaseTest {
 
         // Altibase Geometry 필드 크기 최적화: Retype FeatureCollection
         int maxGeomSize = getMaximumGeometrySize(source.getFeatures(Filter.INCLUDE));
+        System.out.println("maxGeomSize = " + maxGeomSize);
 
         // 레이어이름 대소문자 전환
 
@@ -143,9 +144,21 @@ public class AltibaseTest {
                 featureCount++;
                 SimpleFeature feature = featureIter.next();
 
+                // Altibase does not support none-simple geometry
+                Geometry geometry = (Geometry) feature.getDefaultGeometry();
+                if (!geometry.isSimple()) {
+                    geometry = geometry.buffer(0);
+                }
+
                 SimpleFeature newFeature = writer.next();
                 newFeature.setAttributes(feature.getAttributes());
-                writer.write();
+                newFeature.setDefaultGeometry(geometry);
+
+                try {
+                    writer.write();
+                } catch (Exception e) {
+                    System.out.println(e.getMessage());
+                }
 
                 if ((featureCount % flushInterval) == 0) {
                     transaction.commit();
@@ -154,6 +167,7 @@ public class AltibaseTest {
             transaction.commit();
         } catch (Exception e) {
             transaction.rollback();
+            System.out.println(e.getMessage());
         } finally {
             featureIter.close();
             transaction.close();
@@ -206,7 +220,8 @@ public class AltibaseTest {
         params.put(JDBCDataStoreFactory.PASSWD.key, "manager");
 
         // Altibase ERROR: preparedStatements
-        params.put("preparedStatements", Boolean.FALSE); //
+        params.put(AltibaseNGDataStoreFactory.PREPARED_STATEMENTS.key, Boolean.FALSE);
+        params.put(AltibaseNGDataStoreFactory.ENCODING.key, "UTF8");
         return params;
     }
 

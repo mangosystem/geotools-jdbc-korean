@@ -323,6 +323,3 @@ X Y
 MINX MINY
 MAXX MAXY
 ISVALID
-
-* 참고: PostGIS Reference
-http://postgis.refractions.net/documentation/manual-1.5/reference.html

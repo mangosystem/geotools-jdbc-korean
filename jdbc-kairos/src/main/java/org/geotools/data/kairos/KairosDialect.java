@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.logging.Level;
 
 import org.geotools.data.jdbc.FilterToSQL;
@@ -506,7 +507,13 @@ public class KairosDialect extends BasicSQLDialect {
         super.registerClassToSqlMappings(mappings);
 
         // jdbc metadata for geom columns reports DATA_TYPE=1111=Types.OTHER
-        mappings.put(Geometry.class, Types.OTHER);
+        mappings.put(Short.class, new Integer(Types.SMALLINT));
+        mappings.put(Integer.class, new Integer(Types.INTEGER));
+        mappings.put(Long.class, new Integer(Types.BIGINT));
+        mappings.put(Float.class, new Integer(Types.REAL));
+        mappings.put(Double.class, new Integer(Types.DOUBLE));
+        mappings.put(Geometry.class, new Integer(Types.OTHER));
+        mappings.put(UUID.class, Types.OTHER);
 
         // Geometry Type for Kairos
         mappings.put(Point.class, GEOM_POINT);

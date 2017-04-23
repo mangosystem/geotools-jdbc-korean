@@ -73,11 +73,11 @@ public class KairosTest {
                 .getTypeName());
 
         System.out.println(out.getName().toString() + " inserted = " + out.getCount(Query.ALL));
-        
+
         // filter test
         String geom = out.getSchema().getGeometryDescriptor().getLocalName();
         Geometry bounds = JTS.toGeometry(out.getBounds());
-        
+
         FilterFactory2 ff = CommonFactoryFinder.getFilterFactory2(null);
         Filter filter = ff.intersects(ff.property(geom), ff.literal(bounds));
         System.out.println("Intersects = " + out.getFeatures(filter).size());
@@ -178,7 +178,7 @@ public class KairosTest {
         params.put(JDBCDataStoreFactory.PORT.key, "5000");
         params.put(JDBCDataStoreFactory.USER.key, "root");
         params.put(JDBCDataStoreFactory.PASSWD.key, "root");
-        params.put("preparedStatements", Boolean.TRUE);
+        params.put(KairosNGDataStoreFactory.PREPARED_STATEMENTS.key, Boolean.TRUE);
         return params;
     }
 

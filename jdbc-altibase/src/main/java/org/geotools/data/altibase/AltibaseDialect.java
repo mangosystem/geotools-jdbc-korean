@@ -29,6 +29,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.logging.Level;
 
 import org.geotools.data.jdbc.FilterToSQL;
@@ -534,7 +535,13 @@ public class AltibaseDialect extends BasicSQLDialect {
         super.registerClassToSqlMappings(mappings);
 
         // jdbc metadata for geom columns reports DATA_TYPE=1111=Types.OTHER
-        mappings.put(Geometry.class, Types.OTHER);
+        mappings.put(Short.class, new Integer(Types.SMALLINT));
+        mappings.put(Integer.class, new Integer(Types.INTEGER));
+        mappings.put(Long.class, new Integer(Types.BIGINT));
+        mappings.put(Float.class, new Integer(Types.REAL));
+        mappings.put(Double.class, new Integer(Types.DOUBLE));
+        mappings.put(Geometry.class, new Integer(Types.OTHER));
+        mappings.put(UUID.class, Types.OTHER);
     }
 
     @Override
@@ -551,6 +558,7 @@ public class AltibaseDialect extends BasicSQLDialect {
         overrides.put(new Integer(Types.BOOLEAN), "BOOL");
         overrides.put(new Integer(Types.SMALLINT), "INTEGER");
         overrides.put(new Integer(Types.INTEGER), "INTEGER");
+        overrides.put(new Integer(Types.BIGINT), "INTEGER");
         overrides.put(new Integer(Types.REAL), "FLOAT");
         overrides.put(new Integer(Types.FLOAT), "FLOAT");
         overrides.put(new Integer(Types.DOUBLE), "DOUBLE");
@@ -779,12 +787,15 @@ public class AltibaseDialect extends BasicSQLDialect {
             if (size == 0 || size < 25) {
                 // #=================================================================
                 // Insert Error: Invalid length of the data type : WKB Geometry Size
+                // 생성될 칼럼의 최대 크기(Bytes 단위)를 명시한다.
+                // 최소 16Bytes, 최대 100MBytes까지 지정할 수 있으며, 명시하지 않을 경우 기본값으로 32,000 Bytes을 갖는다.
+                // 저장 공간이 precision보다 큰 공간객체 데이터는 삽입할 수 없다.
                 // #=================================================================
                 // # altibase.properties: ST Object Buffer Size Properties
-                // #=================================================================
                 // ST_OBJECT_BUFFER_SIZE = 32000 # default : 32000 ==> 1,523
                 // - min : 32000
                 // - max : 104857600 ==> 4,993,219
+                // #=================================================================
 
                 size = 32000;
                 if (binding.isAssignableFrom(MultiPolygon.class)) {
