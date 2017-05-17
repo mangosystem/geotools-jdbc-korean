@@ -356,10 +356,6 @@ public class TiberoDialect extends BasicSQLDialect {
         ResultSet result = null;
 
         try {
-            if (schemaName == null || schemaName.isEmpty()) {
-                schemaName = "SYSGIS";
-            }
-
             String sqlStatement = "SELECT F_GEOMETRY_TYPE FROM " + gTableName + " WHERE " //
                     + "F_TABLE_SCHEMA = '" + schemaName + "' " //
                     + "AND F_TABLE_NAME = '" + tableName + "' " //
@@ -386,10 +382,6 @@ public class TiberoDialect extends BasicSQLDialect {
         String tableName = columnMetaData.getString("TABLE_NAME");
         String columnName = columnMetaData.getString("COLUMN_NAME");
         String schemaName = columnMetaData.getString("TABLE_SCHEM");
-
-        if (schemaName == null || schemaName.isEmpty()) {
-            schemaName = "SYSGIS";
-        }
 
         String sql = "SELECT udt_name FROM information_schema.columns " + " WHERE table_schema = '"
                 + schemaName + "' " + " AND table_name = '" + tableName + "' "
@@ -421,10 +413,6 @@ public class TiberoDialect extends BasicSQLDialect {
         try {
             // try geometry_columns
             try {
-                if (schemaName == null || schemaName.isEmpty()) {
-                    schemaName = "SYSGIS";
-                }
-
                 String sqlStatement = "SELECT SRID FROM GEOMETRY_COLUMNS WHERE " //
                         + "F_TABLE_SCHEMA = '" + schemaName + "' " //
                         + "AND F_TABLE_NAME = '" + tableName + "' " //
@@ -464,10 +452,6 @@ public class TiberoDialect extends BasicSQLDialect {
         try {
             // try geometry_columns
             try {
-                if (schemaName == null || schemaName.isEmpty()) {
-                    schemaName = "SYSGIS";
-                }
-
                 String sqlStatement = "SELECT COORD_DIMENSION FROM GEOMETRY_COLUMNS WHERE " //
                         + "F_TABLE_SCHEMA = '" + schemaName + "' " //
                         + "AND F_TABLE_NAME = '" + tableName + "' " //
@@ -616,9 +600,6 @@ public class TiberoDialect extends BasicSQLDialect {
         Statement st = null;
         try {
             st = cx.createStatement();
-            if (schemaName == null || schemaName.isEmpty()) {
-                schemaName = "SYSGIS";
-            }
 
             // register all geometry columns in the database
             for (AttributeDescriptor att : featureType.getAttributeDescriptors()) {
@@ -680,8 +661,6 @@ public class TiberoDialect extends BasicSQLDialect {
                     sql = "CREATE INDEX \"SPATIAL_" + tableName //
                             + "_" + gd.getLocalName() + "\""//
                             + " ON " //
-                            + "\"" + schemaName + "\"" //
-                            + "." //
                             + "\"" + tableName + "\"" //
                             + " (" //
                             + "\"" + gd.getLocalName() + "\"" //
@@ -718,10 +697,6 @@ public class TiberoDialect extends BasicSQLDialect {
             throws SQLException {
         Statement st = cx.createStatement();
         try {
-            if (schemaName == null || schemaName.isEmpty()) {
-                schemaName = "SYSGIS";
-            }
-
             String tableName = featureType.getTypeName();
             // remove all the geometry_column entries
             String sql = "DELETE FROM GEOMETRY_COLUMNS_BASE" + " WHERE F_TABLE_SCHEMA = '"

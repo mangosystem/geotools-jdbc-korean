@@ -640,13 +640,13 @@ public class KairosDialect extends BasicSQLDialect {
                     // grab the geometry type
                     String geomType = CLASS_TO_TYPE_MAP.get(gd.getType().getBinding());
                     if (geomType == null) {
-                        geomType = "GEOMETRY";
+                        geomType = "ST_GEOMETRY";
                     }
 
                     // register the geometry type, first remove and eventual
                     // leftover, then write out the real one
                     String sql = "DELETE FROM GEOMETRY_COLUMNS" + " WHERE f_table_catalog =''" //
-                            + " AND f_table_schema = '" + schemaName + "'" //
+                            + " AND F_TABLE_SCHEMA = '" + schemaName + "'" //
                             + " AND F_TABLE_NAME = '" + tableName + "'" //
                             + " AND F_GEOMETRY_COLUMN = '" + gd.getLocalName() + "'";
 

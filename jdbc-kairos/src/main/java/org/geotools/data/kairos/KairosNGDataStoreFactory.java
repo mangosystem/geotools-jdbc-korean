@@ -17,6 +17,7 @@
 package org.geotools.data.kairos;
 
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.util.Map;
 
 import org.geotools.jdbc.JDBCDataStore;
@@ -32,6 +33,10 @@ public class KairosNGDataStoreFactory extends JDBCDataStoreFactory {
     /** parameter for database instance */
     public static final Param DATABASE = new Param("database", String.class, "Database", true,
             "test");
+
+    /** parameter for database encoding */
+    public static final Param ENCODING = new Param("encoding", String.class, "Encoding", false,
+            Charset.defaultCharset().name());
 
     /** parameter for database schema */
     public static final Param SCHEMA = new Param("schema", String.class, "Schema", false, "root");
@@ -139,6 +144,7 @@ public class KairosNGDataStoreFactory extends JDBCDataStoreFactory {
         parameters.put(HOST.key, HOST);
         parameters.put(PORT.key, PORT);
         parameters.put(DATABASE.key, DATABASE);
+        parameters.put(ENCODING.key, ENCODING);
         parameters.put(SCHEMA.key, SCHEMA);
         parameters.put(USER.key, USER);
         parameters.put(PASSWD.key, PASSWD);
@@ -175,7 +181,14 @@ public class KairosNGDataStoreFactory extends JDBCDataStoreFactory {
         String host = (String) HOST.lookUp(params);
         String db = (String) DATABASE.lookUp(params);
         int port = (Integer) PORT.lookUp(params);
-        return "jdbc:kairos" + "://" + host + ":" + port + "/" + db;
+        String encoding = (String) ENCODING.lookUp(params);
+
+        if (encoding == null || encoding.isEmpty()) {
+            return "jdbc:kairos" + "://" + host + ":" + port + "/" + db;
+        } else {
+            // jdbc:kairos://localhost/dbname;CHARSET=SJIS
+            return "jdbc:kairos" + "://" + host + ":" + port + "/" + db + ";CHARSET=" + encoding;
+        }
     }
 
 }

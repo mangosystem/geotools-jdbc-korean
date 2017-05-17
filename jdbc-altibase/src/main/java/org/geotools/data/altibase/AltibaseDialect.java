@@ -322,10 +322,6 @@ public class AltibaseDialect extends BasicSQLDialect {
         ResultSet rs = null;
 
         try {
-            if (schemaName == null || schemaName.isEmpty()) {
-                schemaName = "SYS";
-            }
-            
             StringBuffer sb = new StringBuffer();
             sb.append("SELECT GEOMETRYTYPE(");
             sb.append("\"").append(columnName).append("\")");
@@ -355,10 +351,6 @@ public class AltibaseDialect extends BasicSQLDialect {
         String tableName = columnMetaData.getString("TABLE_NAME");
         String columnName = columnMetaData.getString("COLUMN_NAME");
         String schemaName = columnMetaData.getString("TABLE_SCHEM");
-        
-        if (schemaName == null || schemaName.isEmpty()) {
-            schemaName = "SYS";
-        }
 
         String sql = "SELECT udt_name FROM information_schema.columns " + " WHERE table_schema = '"
                 + schemaName + "' " + " AND table_name = '" + tableName + "' "
@@ -391,10 +383,6 @@ public class AltibaseDialect extends BasicSQLDialect {
         try {
             // try geometry_columns
             try {
-                if (schemaName == null || schemaName.isEmpty()) {
-                    schemaName = "SYS";
-                }
-
                 String sridSQL = "SELECT SRID FROM GEOMETRY_COLUMNS WHERE " //
                         + "F_TABLE_SCHEMA = '" + schemaName + "' " //
                         + "AND F_TABLE_NAME = '" + tableName + "' " //
@@ -437,10 +425,6 @@ public class AltibaseDialect extends BasicSQLDialect {
         try {
             // try geometry_columns
             try {
-                if (schemaName == null || schemaName.isEmpty()) {
-                    schemaName = "SYS";
-                }
-
                 String sqlStatement = "SELECT COORD_DIMENSION FROM GEOMETRY_COLUMNS WHERE " //
                         + "F_TABLE_SCHEMA = '" + schemaName + "' " //
                         + "AND F_TABLE_NAME = '" + tableName + "' " //
@@ -585,9 +569,6 @@ public class AltibaseDialect extends BasicSQLDialect {
         Statement st = null;
         try {
             st = cx.createStatement();
-            if (schemaName == null || schemaName.isEmpty()) {
-                schemaName = "SYS";
-            }
 
             // register all geometry columns in the database
             for (AttributeDescriptor att : featureType.getAttributeDescriptors()) {
@@ -642,8 +623,6 @@ public class AltibaseDialect extends BasicSQLDialect {
                     sql = "CREATE INDEX \"spatial_" + tableName //
                             + "_" + gd.getLocalName() + "\""//
                             + " ON " //
-                            + "\"" + schemaName + "\"" //
-                            + "." //
                             + "\"" + tableName + "\"" //
                             + " (" //
                             + "\"" + gd.getLocalName() + "\"" //
@@ -679,10 +658,6 @@ public class AltibaseDialect extends BasicSQLDialect {
             throws SQLException {
         Statement st = cx.createStatement();
         try {
-            if (schemaName == null || schemaName.isEmpty()) {
-                schemaName = "SYS";
-            }
-
             String tableName = featureType.getTypeName();
             // remove all the geometry_column entries
             String sql = "DELETE FROM GEOMETRY_COLUMNS" + " WHERE F_TABLE_SCHEMA = '" + schemaName
