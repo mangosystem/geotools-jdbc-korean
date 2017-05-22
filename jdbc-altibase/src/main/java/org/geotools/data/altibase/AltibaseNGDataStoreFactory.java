@@ -157,8 +157,9 @@ public class AltibaseNGDataStoreFactory extends JDBCDataStoreFactory {
         parameters.put(MINCONN.key, MINCONN);
         parameters.put(FETCHSIZE.key, FETCHSIZE);
         parameters.put(MAXWAIT.key, MAXWAIT);
-        if (getValidationQuery() != null)
+        if (getValidationQuery() != null) {
             parameters.put(VALIDATECONN.key, VALIDATECONN);
+        }
         parameters.put(PK_METADATA_TABLE.key, PK_METADATA_TABLE);
     }
 

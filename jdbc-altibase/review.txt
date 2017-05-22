@@ -139,13 +139,11 @@ SRID INTERGER Spatial Reference Indentifier
 You can manage information of SRID (Spatial Reference System) and SRS (Spatial Reference System) with this.
 
 Column name Type Description
-SRID INTEGER Spatial reference identifier used
-internally
+SRID INTEGER Spatial reference identifier used internally
 AUTH_NAME VARCHAR(80) Certified name
 AUTH_SRID INTERGER Certified spatial reference identifier
-SRTEXT VARCHAR (2048) Description of WKT geometries
-used throughout OGC specifications
-PROJ4TEXT VARCHAR (2048) PROJ4 infromation
+SRTEXT VARCHAR (2048) Description of WKT geometries used throughout OGC specifications
+PROJ4TEXT VARCHAR (2048) PROJ4 information
 
 5. Stored Procedure
 ▷ ADDGEOMETRYCOLUMNS
