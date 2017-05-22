@@ -114,7 +114,9 @@ public class KairosNGDataStoreFactory extends JDBCDataStoreFactory {
         String schema = (String) SCHEMA.lookUp(params);
         if (schema != null) {
             // NOTE: schema is an owner in this database
-            dataStore.setDatabaseSchema(schema.toUpperCase());
+            dataStore.setDatabaseSchema(schema);
+        } else {
+            dataStore.setDatabaseSchema((String) USER.lookUp(params));
         }
 
         // setup loose bbox
@@ -140,6 +142,7 @@ public class KairosNGDataStoreFactory extends JDBCDataStoreFactory {
     protected void setupParameters(Map parameters) {
         // NOTE: when adding parameters here remember to add them to KairosNGJNDIDataStoreFactory
         super.setupParameters(parameters);
+        
         parameters.put(DBTYPE.key, DBTYPE);
         parameters.put(HOST.key, HOST);
         parameters.put(PORT.key, PORT);
@@ -155,8 +158,9 @@ public class KairosNGDataStoreFactory extends JDBCDataStoreFactory {
         parameters.put(MINCONN.key, MINCONN);
         parameters.put(FETCHSIZE.key, FETCHSIZE);
         parameters.put(MAXWAIT.key, MAXWAIT);
-        if (getValidationQuery() != null)
+        if (getValidationQuery() != null) {
             parameters.put(VALIDATECONN.key, VALIDATECONN);
+        }
         parameters.put(PK_METADATA_TABLE.key, PK_METADATA_TABLE);
     }
 

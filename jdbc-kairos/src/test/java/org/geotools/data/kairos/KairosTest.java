@@ -68,7 +68,7 @@ public class KairosTest {
         DataStore shpStore = getShapefileDataStore("C:/data/road");
         SimpleFeatureSource shp_sfs = shpStore.getFeatureSource(typeName);
         System.out.println(shp_sfs.getName().toString() + " = " + shp_sfs.getCount(Query.ALL));
-
+        
         SimpleFeatureSource out = uploadFeatures(shp_sfs, dataStore, shp_sfs.getSchema()
                 .getTypeName());
 
@@ -171,14 +171,13 @@ public class KairosTest {
 
     private Map<String, Object> getConnection() {
         Map<String, Object> params = new HashMap<String, Object>();
-        params.put(JDBCDataStoreFactory.DBTYPE.key, "tibero");
+        params.put(JDBCDataStoreFactory.DBTYPE.key, "kairos");
         params.put(JDBCDataStoreFactory.HOST.key, "localhost");
-        params.put(JDBCDataStoreFactory.DATABASE.key, "tibero");
-        params.put(JDBCDataStoreFactory.SCHEMA.key, "root");
+        params.put(JDBCDataStoreFactory.DATABASE.key, "test");
         params.put(JDBCDataStoreFactory.PORT.key, "5000");
         params.put(JDBCDataStoreFactory.USER.key, "root");
         params.put(JDBCDataStoreFactory.PASSWD.key, "root");
-        params.put(KairosNGDataStoreFactory.PREPARED_STATEMENTS.key, Boolean.TRUE);
+        params.put(KairosNGDataStoreFactory.PREPARED_STATEMENTS.key, Boolean.FALSE);
         return params;
     }
 

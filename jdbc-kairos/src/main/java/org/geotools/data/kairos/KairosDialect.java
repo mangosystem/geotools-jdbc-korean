@@ -307,9 +307,7 @@ public class KairosDialect extends BasicSQLDialect {
     @Override
     public Class<?> getMapping(ResultSet columnMetaData, Connection cx) throws SQLException {
         String typeName = columnMetaData.getString("TYPE_NAME");
-
-        Class<?> geometryClass = (Class) TYPE_TO_CLASS_MAP.get(typeName.toUpperCase());
-        return geometryClass;
+        return (Class) TYPE_TO_CLASS_MAP.get(typeName.toUpperCase());
     }
 
     @Override
@@ -349,14 +347,13 @@ public class KairosDialect extends BasicSQLDialect {
         try {
             // try geometry_columns
             try {
-                String sqlStatement = "SELECT SRID FROM GEOMETRY_COLUMNS WHERE " //
-                        + "F_TABLE_SCHEMA = '" + schemaName + "' " //
-                        + "AND F_TABLE_NAME = '" + tableName + "' " //
-                        + "AND F_GEOMETRY_COLUMN = '" + columnName + "'";
+                String sql = "SELECT SRID FROM GEOMETRY_COLUMNS WHERE " //
+                        + " F_TABLE_NAME = '" + tableName + "' " //
+                        + " AND F_GEOMETRY_COLUMN = '" + columnName + "'";
 
-                LOGGER.log(Level.FINE, "Geometry srid check; {0} ", sqlStatement);
+                LOGGER.log(Level.FINE, "Geometry srid check; {0} ", sql);
                 statement = cx.createStatement();
-                result = statement.executeQuery(sqlStatement);
+                result = statement.executeQuery(sql);
 
                 if (result.next()) {
                     srid = result.getInt(1);
@@ -388,14 +385,13 @@ public class KairosDialect extends BasicSQLDialect {
         try {
             // try geometry_columns
             try {
-                String sqlStatement = "SELECT COORD_DIMENSION FROM GEOMETRY_COLUMNS WHERE " //
-                        + "F_TABLE_SCHEMA = '" + schemaName + "' " //
-                        + "AND F_TABLE_NAME = '" + tableName + "' " //
-                        + "AND F_GEOMETRY_COLUMN = '" + columnName + "'";
+                String sql = "SELECT COORD_DIMENSION FROM GEOMETRY_COLUMNS WHERE " //
+                        + " F_TABLE_NAME = '" + tableName + "' " //
+                        + " AND F_GEOMETRY_COLUMN = '" + columnName + "'";
 
-                LOGGER.log(Level.FINE, "Geometry srid check; {0} ", sqlStatement);
+                LOGGER.log(Level.FINE, "Geometry srid check; {0} ", sql);
                 statement = cx.createStatement();
-                result = statement.executeQuery(sqlStatement);
+                result = statement.executeQuery(sql);
 
                 if (result.next()) {
                     dimension = result.getInt(1);
@@ -557,15 +553,18 @@ public class KairosDialect extends BasicSQLDialect {
 
     @Override
     public void registerSqlTypeToSqlTypeNameOverrides(Map<Integer, String> overrides) {
+        overrides.put(new Integer(Types.BIT), "BIT");
         overrides.put(new Integer(Types.VARCHAR), "VARCHAR");
         overrides.put(new Integer(Types.BOOLEAN), "BOOL");
-        overrides.put(new Integer(Types.SMALLINT), "INTEGER");
+        overrides.put(new Integer(Types.SMALLINT), "SMALLINT");
         overrides.put(new Integer(Types.INTEGER), "INTEGER");
-        overrides.put(new Integer(Types.REAL), "FLOAT");
+        overrides.put(new Integer(Types.BIGINT), "BIGINT");
+        overrides.put(new Integer(Types.REAL), "REAL");
         overrides.put(new Integer(Types.FLOAT), "FLOAT");
         overrides.put(new Integer(Types.DOUBLE), "DOUBLE");
-        overrides.put(new Integer(Types.DECIMAL), "NUMBER");
+        overrides.put(new Integer(Types.DECIMAL), "DECIMAL");
         overrides.put(new Integer(Types.NUMERIC), "NUMBER");
+        overrides.put(new Integer(Types.BLOB), "BLOB");
     }
 
     @Override
@@ -640,20 +639,21 @@ public class KairosDialect extends BasicSQLDialect {
                     // grab the geometry type
                     String geomType = CLASS_TO_TYPE_MAP.get(gd.getType().getBinding());
                     if (geomType == null) {
-                        geomType = "ST_GEOMETRY";
+                        geomType = "GEOMETRY";
                     }
 
                     // register the geometry type, first remove and eventual
                     // leftover, then write out the real one
                     String sql = "DELETE FROM GEOMETRY_COLUMNS" + " WHERE f_table_catalog =''" //
-                            + " AND F_TABLE_SCHEMA = '" + schemaName + "'" //
                             + " AND F_TABLE_NAME = '" + tableName + "'" //
                             + " AND F_GEOMETRY_COLUMN = '" + gd.getLocalName() + "'";
 
                     LOGGER.fine(sql);
                     st.execute(sql);
 
-                    sql = "INSERT INTO GEOMETRY_COLUMNS VALUES (''," //
+                    sql = "INSERT INTO GEOMETRY_COLUMNS " //
+                            + "(F_TABLE_CATALOG, F_TABLE_SCHEMA, F_TABLE_NAME, F_GEOMETRY_COLUMN, COORD_DIMENSION, SRID, F_GEOMETRY_TYPE)" //
+                            + "VALUES (''," //
                             + "'" + schemaName + "'," //
                             + "'" + tableName + "'," //
                             + "'" + gd.getLocalName() + "'," //
@@ -707,8 +707,8 @@ public class KairosDialect extends BasicSQLDialect {
         try {
             String tableName = featureType.getTypeName();
             // remove all the geometry_column entries
-            String sql = "DELETE FROM GEOMETRY_COLUMNS" + " WHERE F_TABLE_SCHEMA = '"
-                    + schemaName + "'" + " AND F_TABLE_NAME = '" + tableName + "'";
+            String sql = "DELETE FROM GEOMETRY_COLUMNS" + " WHERE F_TABLE_NAME = '" + tableName
+                    + "' AND F_TABLE_SCHEMA = '" + schemaName + "'";
             LOGGER.fine(sql);
             st.execute(sql);
         } finally {
@@ -727,7 +727,7 @@ public class KairosDialect extends BasicSQLDialect {
                 value = value.getFactory().createLineString(
                         ((LinearRing) value).getCoordinateSequence());
             }
-            
+
             // KAIROS ERROR: ERROR(43003) WKT string is too long. Max length is 4KB
             sql.append("ST_GeomFromText('" + value.toText() + "', " + srid + ")");
         }

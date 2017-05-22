@@ -3,22 +3,30 @@ Kairos Spatial
 
 * 데이터베이스 생성
 createdb databaseName [-s initialDBSize] [-g growingDBSize] [-f DBFileSize] [-i indexLogging] [/y]
-createdb test -s 100
+createdb test -s 250 -g 50
 
 dropdb databaseName [/y]
 
-* System 테이블
-CREATE TABLE geometry_columns
+* System Table
+CREATE TABLE SPATIAL_REF_SYS (
+    SRID        INTEGER NOT NULL PRIMARY KEY,
+    AUTH_NAME   VARCHAR(256),
+    AUTH_SRID   INTEGER,
+    SRTEXT      VARCHAR(2048),
+    PROJ4TEXT   VARCHAR (2048)
+);
+
+CREATE TABLE GEOMETRY_COLUMNS
 (
-  f_table_catalog varchar(256) NOT NULL,
-  f_table_schema varchar(256) NOT NULL,
-  f_table_name varchar(256) NOT NULL,
-  f_geometry_column varchar(256) NOT NULL,
-  coord_dimension integer NOT NULL,
-  srid integer NOT NULL,
-  f_geometry_type varchar(30) NOT NULL,
-  CONSTRAINT geometry_columns_pk PRIMARY KEY (f_table_catalog, f_table_schema, f_table_name, f_geometry_column)
-)
+  F_TABLE_CATALOG VARCHAR(256) NOT NULL,
+  F_TABLE_SCHEMA VARCHAR(256) NOT NULL,
+  F_TABLE_NAME VARCHAR(256) NOT NULL,
+  F_GEOMETRY_COLUMN VARCHAR(256) NOT NULL,
+  COORD_DIMENSION INTEGER NOT NULL,
+  SRID INTEGER NOT NULL,
+  F_GEOMETRY_TYPE VARCHAR(30) NOT NULL,
+  CONSTRAINT geometry_columns_pk PRIMARY KEY (F_TABLE_CATALOG, F_TABLE_SCHEMA, F_TABLE_NAME, F_GEOMETRY_COLUMN)
+);
 
 CREATE [UNIQUE] [TTREE] INDEX IndexName ON TableName (ColumnName[,ColumnName]??
 
