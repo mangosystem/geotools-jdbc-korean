@@ -65,7 +65,7 @@ public class AltibaseTest {
         }
 
         // upload shapefile: road point line polygon road_network
-        String typeName = "road_network";
+        String typeName = "point";
         DataStore shpStore = getShapefileDataStore("C:/data/road");
         SimpleFeatureSource shp_sfs = shpStore.getFeatureSource(typeName);
         System.out.println(shp_sfs.getName().toString() + " = " + shp_sfs.getCount(Query.ALL));
