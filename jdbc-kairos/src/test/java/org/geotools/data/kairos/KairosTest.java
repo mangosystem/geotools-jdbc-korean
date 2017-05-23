@@ -2,8 +2,12 @@ package org.geotools.data.kairos;
 
 import java.io.File;
 import java.io.IOException;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -20,12 +24,10 @@ import org.geotools.data.simple.SimpleFeatureSource;
 import org.geotools.data.simple.SimpleFeatureStore;
 import org.geotools.factory.CommonFactoryFinder;
 import org.geotools.geometry.jts.JTS;
-import org.geotools.geometry.jts.ReferencedEnvelope;
 import org.geotools.jdbc.JDBCDataStoreFactory;
 import org.geotools.util.logging.Logging;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
-import org.opengis.feature.type.Name;
 import org.opengis.filter.Filter;
 import org.opengis.filter.FilterFactory2;
 import org.opengis.referencing.FactoryException;
@@ -40,6 +42,50 @@ public class KairosTest {
     public static void main(String[] args) throws IOException, NoSuchAuthorityCodeException,
             FactoryException, ParseException {
         new KairosTest().execute();
+
+        try {
+            new KairosTest().testJdbcConnection();
+        } catch (ClassNotFoundException e) {
+            LOGGER.log(Level.FINER, e.getMessage(), e);
+        } catch (SQLException e) {
+            LOGGER.log(Level.FINER, e.getMessage(), e);
+        }
+    }
+
+    private void testJdbcConnection() throws ClassNotFoundException, SQLException, IOException {
+        Class.forName("kr.co.realtimetech.kairos.jdbc.kairosDriver");
+
+        Connection cx = DriverManager.getConnection(getJDBCUrl(), "root", "root");
+
+        // metadata bug
+        // DatabaseMetaData metaData = cx.getMetaData();
+        // ResultSet typeInfo = metaData.getTypeInfo();
+        // typeInfo.close();
+
+        // transaction bug
+        // boolean autoCommit = cx.getAutoCommit();
+        // cx.setAutoCommit(true);
+        // cx.setAutoCommit(true);
+
+        // select
+        String sql = "SELECT * from GEOMETRY_COLUMNS ORDER BY F_GEOMETRY_TYPE";
+        Statement st = cx.createStatement();
+        ResultSet rs = st.executeQuery(sql);
+        while (rs.next()) {
+            String schema = rs.getString(2);
+            String name = rs.getString(3);
+            String column = rs.getString(4);
+            int dim = rs.getInt(5);
+            int srid = rs.getInt(6);
+            String type = rs.getString(7);
+            System.out.println(schema + "," + name + "," + column + "," + dim + "," + srid + ","
+                    + type);
+        }
+        rs.close();
+        st.close();
+
+        // finally close connection
+        cx.close();
     }
 
     private void execute() throws IOException, NoSuchAuthorityCodeException, FactoryException {
@@ -49,26 +95,12 @@ public class KairosTest {
         KairosNGDataStoreFactory factory = new KairosNGDataStoreFactory();
         DataStore dataStore = factory.createDataStore(params);
 
-        // get layers
-        List<Name> typeNames = dataStore.getNames();
-        for (Name typeName : typeNames) {
-            SimpleFeatureSource sfs = dataStore.getFeatureSource(typeName);
-            ReferencedEnvelope extent = sfs.getBounds();
-            System.out.println(typeName + "'s extent = " + extent.toString());
-            if (sfs.getSchema().getGeometryDescriptor() == null) {
-                System.out.println(sfs.getName().toString() + " = " + sfs.getCount(Query.ALL));
-            } else {
-                System.out.println(sfs.getSchema().getGeometryDescriptor().getType());
-                System.out.println(sfs.getName().toString() + " = " + sfs.getCount(Query.ALL));
-            }
-        }
-
-        // upload shapefile: road point line polygon
+        // upload shapefile: road point line polygon road_network 3857
         String typeName = "point";
         DataStore shpStore = getShapefileDataStore("C:/data/road");
         SimpleFeatureSource shp_sfs = shpStore.getFeatureSource(typeName);
         System.out.println(shp_sfs.getName().toString() + " = " + shp_sfs.getCount(Query.ALL));
-        
+
         SimpleFeatureSource out = uploadFeatures(shp_sfs, dataStore, shp_sfs.getSchema()
                 .getTypeName());
 
@@ -108,8 +140,14 @@ public class KairosTest {
         }
 
         // try create schema
-        targetStore.createSchema(source.getSchema());
-        SimpleFeatureSource target = targetStore.getFeatureSource(targetName);
+        SimpleFeatureSource target = null;
+        try {
+            targetStore.createSchema(source.getSchema());
+            target = targetStore.getFeatureSource(targetName);
+        } catch (IOException e) {
+            LOGGER.log(Level.INFO, e.getMessage());
+        }
+
         if (target == null) {
             return target;
         }
@@ -119,6 +157,7 @@ public class KairosTest {
         FeatureWriter<SimpleFeatureType, SimpleFeature> writer = null;
         writer = targetStore.getFeatureWriterAppend(targetName, transaction);
         if (writer == null) {
+            transaction.close();
             return target;
         }
 
@@ -177,8 +216,22 @@ public class KairosTest {
         params.put(JDBCDataStoreFactory.PORT.key, "5000");
         params.put(JDBCDataStoreFactory.USER.key, "root");
         params.put(JDBCDataStoreFactory.PASSWD.key, "root");
-        params.put(KairosNGDataStoreFactory.PREPARED_STATEMENTS.key, Boolean.FALSE);
+        params.put(KairosNGDataStoreFactory.PREPARED_STATEMENTS.key, Boolean.TRUE);
         return params;
+    }
+
+    private String getJDBCUrl() throws IOException {
+        Map<String, Object> params = getConnection();
+        String host = (String) KairosNGDataStoreFactory.HOST.lookUp(params);
+        String db = (String) KairosNGDataStoreFactory.DATABASE.lookUp(params);
+        int port = (Integer) KairosNGDataStoreFactory.PORT.lookUp(params);
+        String encoding = (String) KairosNGDataStoreFactory.ENCODING.lookUp(params);
+
+        if (encoding == null || encoding.isEmpty()) {
+            return "jdbc:kairos" + "://" + host + ":" + port + "/" + db;
+        } else {
+            return "jdbc:kairos" + "://" + host + ":" + port + "/" + db + ";CHARSET=" + encoding;
+        }
     }
 
     private DataStore getShapefileDataStore(String folder) throws IOException {

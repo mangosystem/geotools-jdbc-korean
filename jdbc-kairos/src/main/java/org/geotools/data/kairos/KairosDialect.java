@@ -307,7 +307,57 @@ public class KairosDialect extends BasicSQLDialect {
     @Override
     public Class<?> getMapping(ResultSet columnMetaData, Connection cx) throws SQLException {
         String typeName = columnMetaData.getString("TYPE_NAME");
-        return (Class) TYPE_TO_CLASS_MAP.get(typeName.toUpperCase());
+        String gType = null;
+        if ("geometry".equalsIgnoreCase(typeName)) {
+            gType = lookupGeometryType(columnMetaData, cx, "geometry_columns", "f_geometry_column");
+        } else {
+            return null;
+        }
+
+        // decode the type into
+        if (gType == null) {
+            // it's either a generic geography or geometry not registered in the medatata tables
+            return Geometry.class;
+        } else {
+            Class geometryClass = (Class) TYPE_TO_CLASS_MAP.get(gType.toUpperCase());
+            if (geometryClass == null) {
+                geometryClass = Geometry.class;
+            }
+
+            return geometryClass;
+        }
+    }
+
+    String lookupGeometryType(ResultSet columnMetaData, Connection cx, String gTableName,
+            String gColumnName) throws SQLException {
+        // grab the information we need to proceed
+        String tableName = columnMetaData.getString("TABLE_NAME");
+        String columnName = columnMetaData.getString("COLUMN_NAME");
+        String schemaName = columnMetaData.getString("TABLE_SCHEM");
+
+        // first attempt, try with the geometry metadata
+        Statement statement = null;
+        ResultSet result = null;
+
+        try {
+            String sqlStatement = "SELECT F_GEOMETRY_TYPE FROM " + gTableName + " WHERE " //
+                    + "F_TABLE_SCHEMA = '" + schemaName + "' " //
+                    + "AND F_TABLE_NAME = '" + tableName + "' " //
+                    + "AND " + gColumnName + " = '" + columnName + "'";
+
+            LOGGER.log(Level.FINE, "Geometry type check; {0} ", sqlStatement);
+            statement = cx.createStatement();
+            result = statement.executeQuery(sqlStatement);
+
+            if (result.next()) {
+                return result.getString(1);
+            }
+        } finally {
+            dataStore.closeSafe(result);
+            dataStore.closeSafe(statement);
+        }
+
+        return null;
     }
 
     @Override
@@ -505,7 +555,7 @@ public class KairosDialect extends BasicSQLDialect {
         // jdbc metadata for geom columns reports DATA_TYPE=1111=Types.OTHER
         mappings.put(Short.class, new Integer(Types.SMALLINT));
         mappings.put(Integer.class, new Integer(Types.INTEGER));
-        mappings.put(Long.class, new Integer(Types.BIGINT));
+        mappings.put(Long.class, new Integer(Types.INTEGER));
         mappings.put(Float.class, new Integer(Types.REAL));
         mappings.put(Double.class, new Integer(Types.DOUBLE));
         mappings.put(Geometry.class, new Integer(Types.OTHER));
@@ -644,7 +694,7 @@ public class KairosDialect extends BasicSQLDialect {
 
                     // register the geometry type, first remove and eventual
                     // leftover, then write out the real one
-                    String sql = "DELETE FROM GEOMETRY_COLUMNS" + " WHERE f_table_catalog =''" //
+                    String sql = "DELETE FROM GEOMETRY_COLUMNS" + " WHERE F_TABLE_CATALOG =''" //
                             + " AND F_TABLE_NAME = '" + tableName + "'" //
                             + " AND F_GEOMETRY_COLUMN = '" + gd.getLocalName() + "'";
 
@@ -825,7 +875,11 @@ public class KairosDialect extends BasicSQLDialect {
      */
     public Version getVersion(Connection conn) throws SQLException {
         if (version == null) {
-            version = new Version("V_5_0_0"); // Minimum Version
+            version = new Version("5.0"); // Minimum Version
+
+            DatabaseMetaData md = conn.getMetaData();
+            version = new Version(String.format("%d.%d", md.getDatabaseMajorVersion(),
+                    md.getDatabaseMinorVersion()));
         }
         return version;
     }
@@ -834,7 +888,7 @@ public class KairosDialect extends BasicSQLDialect {
      * Returns true if the Kairos version is >= x.x
      */
     boolean supportsGeography(Connection cx) throws SQLException {
-        return false; // getVersion(cx).compareTo(V_5_0_0) >= 0;
+        return false;
     }
 
 }

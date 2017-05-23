@@ -134,6 +134,9 @@ public class KairosNGDataStoreFactory extends JDBCDataStoreFactory {
             dataStore.setSQLDialect(new KairosPSDialect(dataStore, dialect));
         }
 
+        // primary key finder
+        dataStore.setPrimaryKeyFinder(new KairosPrimaryKeyFinder());
+
         return dataStore;
     }
 
@@ -142,7 +145,7 @@ public class KairosNGDataStoreFactory extends JDBCDataStoreFactory {
     protected void setupParameters(Map parameters) {
         // NOTE: when adding parameters here remember to add them to KairosNGJNDIDataStoreFactory
         super.setupParameters(parameters);
-        
+
         parameters.put(DBTYPE.key, DBTYPE);
         parameters.put(HOST.key, HOST);
         parameters.put(PORT.key, PORT);
