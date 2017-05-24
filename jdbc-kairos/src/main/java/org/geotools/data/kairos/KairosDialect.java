@@ -179,6 +179,7 @@ public class KairosDialect extends BasicSQLDialect {
         return (Geometry) reader.read(rs, column);
     }
 
+    @Override
     public Geometry decodeGeometryValue(GeometryDescriptor descriptor, ResultSet rs, int column,
             GeometryFactory factory, Connection cx) throws IOException, SQLException {
         WKBAttributeIO reader = getWKBReader(factory);
@@ -206,7 +207,7 @@ public class KairosDialect extends BasicSQLDialect {
 
     @Override
     public void encodeGeometryEnvelope(String tableName, String geometryColumn, StringBuffer sql) {
-        sql.append(" ST_ASTEXT(ST_ENVELOPE(");
+        sql.append(" ST_ASBINARY(ST_ENVELOPE(");  // ST_ASTEXT
         encodeColumnName(null, geometryColumn, sql);
         sql.append("))");
     }
@@ -651,7 +652,7 @@ public class KairosDialect extends BasicSQLDialect {
     @Override
     public void postCreateTable(String schemaName, SimpleFeatureType featureType, Connection cx)
             throws SQLException {
-        String tableName = featureType.getName().getLocalPart();
+        String tableName = featureType.getTypeName();
 
         Statement st = null;
         try {

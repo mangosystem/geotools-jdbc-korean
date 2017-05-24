@@ -3,6 +3,7 @@ package org.geotools.data.kairos;
 import java.io.File;
 import java.io.IOException;
 import java.sql.Connection;
+import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -34,15 +35,16 @@ import org.opengis.referencing.FactoryException;
 import org.opengis.referencing.NoSuchAuthorityCodeException;
 
 import com.vividsolutions.jts.geom.Geometry;
+import com.vividsolutions.jts.io.ByteOrderValues;
 import com.vividsolutions.jts.io.ParseException;
+import com.vividsolutions.jts.io.WKBWriter;
+import com.vividsolutions.jts.io.WKTReader;
 
 public class KairosTest {
     protected static final Logger LOGGER = Logging.getLogger(KairosTest.class);
 
     public static void main(String[] args) throws IOException, NoSuchAuthorityCodeException,
             FactoryException, ParseException {
-        new KairosTest().execute();
-
         try {
             new KairosTest().testJdbcConnection();
         } catch (ClassNotFoundException e) {
@@ -50,42 +52,8 @@ public class KairosTest {
         } catch (SQLException e) {
             LOGGER.log(Level.FINER, e.getMessage(), e);
         }
-    }
 
-    private void testJdbcConnection() throws ClassNotFoundException, SQLException, IOException {
-        Class.forName("kr.co.realtimetech.kairos.jdbc.kairosDriver");
-
-        Connection cx = DriverManager.getConnection(getJDBCUrl(), "root", "root");
-
-        // metadata bug
-        // DatabaseMetaData metaData = cx.getMetaData();
-        // ResultSet typeInfo = metaData.getTypeInfo();
-        // typeInfo.close();
-
-        // transaction bug
-        // boolean autoCommit = cx.getAutoCommit();
-        // cx.setAutoCommit(true);
-        // cx.setAutoCommit(true);
-
-        // select
-        String sql = "SELECT * from GEOMETRY_COLUMNS ORDER BY F_GEOMETRY_TYPE";
-        Statement st = cx.createStatement();
-        ResultSet rs = st.executeQuery(sql);
-        while (rs.next()) {
-            String schema = rs.getString(2);
-            String name = rs.getString(3);
-            String column = rs.getString(4);
-            int dim = rs.getInt(5);
-            int srid = rs.getInt(6);
-            String type = rs.getString(7);
-            System.out.println(schema + "," + name + "," + column + "," + dim + "," + srid + ","
-                    + type);
-        }
-        rs.close();
-        st.close();
-
-        // finally close connection
-        cx.close();
+        new KairosTest().execute();
     }
 
     private void execute() throws IOException, NoSuchAuthorityCodeException, FactoryException {
@@ -95,8 +63,11 @@ public class KairosTest {
         KairosNGDataStoreFactory factory = new KairosNGDataStoreFactory();
         DataStore dataStore = factory.createDataStore(params);
 
+        SimpleFeatureSource polyfs = dataStore.getFeatureSource("polygon");
+        printFeatures(polyfs);
+
         // upload shapefile: road point line polygon road_network 3857
-        String typeName = "point";
+        String typeName = "line";
         DataStore shpStore = getShapefileDataStore("C:/data/road");
         SimpleFeatureSource shp_sfs = shpStore.getFeatureSource(typeName);
         System.out.println(shp_sfs.getName().toString() + " = " + shp_sfs.getCount(Query.ALL));
@@ -117,6 +88,77 @@ public class KairosTest {
         dataStore.dispose();
 
         System.out.println("completed");
+    }
+
+    private void testJdbcConnection() throws ClassNotFoundException, SQLException, IOException {
+        Class.forName("kr.co.realtimetech.kairos.jdbc.kairosDriver");
+
+        Connection cx = DriverManager.getConnection(getJDBCUrl(), "root", "root");
+
+        // metadata bug
+        DatabaseMetaData metaData = cx.getMetaData();
+        ResultSet typeInfo = metaData.getTypeInfo(); // ERROR
+        typeInfo.close();
+
+        // transaction bug
+        boolean autoCommit = cx.getAutoCommit();
+        cx.setAutoCommit(autoCommit);
+        cx.setAutoCommit(autoCommit); // ERROR!
+
+        // select table
+        String sql = "SELECT * from GEOMETRY_COLUMNS ORDER BY F_GEOMETRY_TYPE";
+        Statement st = cx.createStatement();
+        ResultSet rs = st.executeQuery(sql);
+        while (rs.next()) {
+            String schema = rs.getString(2);
+            String name = rs.getString(3);
+            String column = rs.getString(4);
+            int dim = rs.getInt(5);
+            int srid = rs.getInt(6);
+            String type = rs.getString(7);
+            System.out.println(schema + "," + name + "," + column + "," + dim + "," + srid + ","
+                    + type);
+        }
+        rs.close();
+        st.close();
+
+        // select layer as WKT
+        sql = "Select ST_ASTEXT(the_geom) from root.point LIMIT 1";
+        st = cx.createStatement();
+        rs = st.executeQuery(sql);
+        while (rs.next()) {
+            String wellKnownText = rs.getString(1);
+            Geometry geom;
+            try {
+                geom = new WKTReader().read(wellKnownText);
+                // byte[] bytes = new WKBWriter(2, ByteOrderValues.LITTLE_ENDIAN).write(geom);
+                System.out.println(geom.getGeometryType() + " = " + geom.getArea());
+            } catch (ParseException e) {
+                e.printStackTrace();
+            }
+        }
+        rs.close();
+        st.close();
+
+        // select layer as WKB
+        sql = "Select ST_ASBINARY(the_geom) from root.polygon LIMIT 1";
+        st = cx.createStatement();
+        rs = st.executeQuery(sql);
+        while (rs.next()) {
+            byte[] wkbBytes = rs.getBytes(1);
+            Geometry geom;
+            try {
+                geom = new WKBReader().read(wkbBytes);
+                System.out.println(geom.getGeometryType() + " = " + geom.getArea());
+            } catch (ParseException e) {
+                e.printStackTrace();
+            }
+        }
+        rs.close();
+        st.close();
+
+        // finally close connection
+        cx.close();
     }
 
     private SimpleFeatureSource uploadFeatures(SimpleFeatureSource source, DataStore targetStore,
@@ -194,7 +236,6 @@ public class KairosTest {
         return target;
     }
 
-    @SuppressWarnings("unused")
     private void printFeatures(SimpleFeatureSource sfs) throws IOException {
         SimpleFeatureIterator featureIter = null;
         try {
@@ -202,6 +243,7 @@ public class KairosTest {
             while (featureIter.hasNext()) {
                 SimpleFeature feature = featureIter.next();
                 System.out.println(feature);
+                break;
             }
         } finally {
             featureIter.close();
@@ -216,7 +258,7 @@ public class KairosTest {
         params.put(JDBCDataStoreFactory.PORT.key, "5000");
         params.put(JDBCDataStoreFactory.USER.key, "root");
         params.put(JDBCDataStoreFactory.PASSWD.key, "root");
-        params.put(KairosNGDataStoreFactory.PREPARED_STATEMENTS.key, Boolean.TRUE);
+        params.put(KairosNGDataStoreFactory.PREPARED_STATEMENTS.key, Boolean.FALSE);
         return params;
     }
 
