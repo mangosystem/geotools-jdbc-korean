@@ -16,6 +16,9 @@ Korean Spatial DBMS Driver for GeoTools, GeoServer, uDig GIS.
   * Download jar files
   * Copy these files to the WEB-INF/lib directory of the GeoServer installation.
   * Restart GeoServer
+  
+### Manual
+  * [GeoServer, uDig에서 국내 Spatial DBMS 활용하기 v1.0](https://sourceforge.net/projects/gt-jdbc-korean/files/GeoServer-uDig_KoreanSpatialDBMS_Manual_ko_v.1.0.pdf)
 
 ### Gallery
 
