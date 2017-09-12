@@ -841,7 +841,7 @@ public class TiberoDialect extends BasicSQLDialect {
     }
 
     /**
-     * Returns true if the Kairos version is >= x.x
+     * Returns true if the Tibero version is >= x.x
      */
     boolean supportsGeography(Connection cx) throws SQLException {
         return false; // getVersion(cx).compareTo(V_5_0_0) >= 0;

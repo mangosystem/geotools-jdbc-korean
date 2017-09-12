@@ -868,7 +868,7 @@ public class AltibaseDialect extends BasicSQLDialect {
     }
 
     /**
-     * Returns true if the Kairos version is >= x.x
+     * Returns true if the Altibase version is >= x.x
      */
     boolean supportsGeography(Connection cx) throws SQLException {
         return false;
