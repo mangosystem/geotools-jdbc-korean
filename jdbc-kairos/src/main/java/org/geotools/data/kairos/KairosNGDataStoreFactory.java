@@ -18,14 +18,23 @@ package org.geotools.data.kairos;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.sql.SQLException;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
+import org.geotools.data.Transaction;
 import org.geotools.jdbc.JDBCDataStore;
 import org.geotools.jdbc.JDBCDataStoreFactory;
 import org.geotools.jdbc.SQLDialect;
+import org.geotools.util.Version;
+import org.geotools.util.logging.Logging;
 
 @SuppressWarnings("rawtypes")
 public class KairosNGDataStoreFactory extends JDBCDataStoreFactory {
+    protected static final Logger LOGGER = Logging.getLogger(KairosNGDataStoreFactory.class);
+
+    static final Version V_6 = new Version("6.0");
 
     /** parameter for database type */
     public static final Param DBTYPE = new Param("dbtype", String.class, "Type", true, "kairos");
@@ -135,7 +144,14 @@ public class KairosNGDataStoreFactory extends JDBCDataStoreFactory {
         }
 
         // primary key finder
-        dataStore.setPrimaryKeyFinder(new KairosPrimaryKeyFinder());
+        try {
+            Version version = dialect.getVersion(dataStore.getConnection(Transaction.AUTO_COMMIT));
+            if (version.compareTo(V_6) >= 0) {
+                dataStore.setPrimaryKeyFinder(new KairosPrimaryKeyFinder());
+            }
+        } catch (SQLException e) {
+            LOGGER.log(Level.WARNING, "Failed to find version", e);
+        }
 
         return dataStore;
     }
