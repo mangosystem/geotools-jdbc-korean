@@ -13,8 +13,9 @@ http://atc.altibase.com/techSupport?do=techSupportView&paramCaseNo=28920
  
 ClassName
  - 4.x 버전(Altibase.jar) : Altibase.jdbc.driver.AltibaseDriver
- - 5.x 버전(Altibase5.jar) : Altibase5.jdbc.driver.AltibaseDriver
+ - 5.x 버전(Altibase5.jar): Altibase5.jdbc.driver.AltibaseDriver
  - 6.x 버전(Altibase.jar) : Altibase.jdbc.driver.AltibaseDriver
+ - 7.x 버전(Altibase.jar) : Altibase.jdbc.driver.AltibaseDriver
  
 URL(공통)
  - jdbc:Altibase://host:20300/mydb?encoding=UTF8
@@ -62,8 +63,6 @@ server stop
 
 * command 사용
 isql -u sys -p manager
-
-SELECT SEQUENCE_NAME FROM SEQ;
 
 * 테이블 및 필드 조회시 주의사항
 테이블 또는필드가 대문자일 경우에 그냥 사용, 소문자로 입력하더라도 대문자로 인식함
