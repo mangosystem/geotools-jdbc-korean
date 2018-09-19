@@ -16,7 +16,7 @@
   <artifactId>gt-jdbc-pgdb</artifactId>
   <packaging>jar</packaging>
   <name>ESRI Personal Geodatabase DataStore</name>
-  <version>14.5</version>
+  <version>15.4</version>
   <description>DataStore for ESRI Personal Geodatabase.</description>
   
   <licenses>

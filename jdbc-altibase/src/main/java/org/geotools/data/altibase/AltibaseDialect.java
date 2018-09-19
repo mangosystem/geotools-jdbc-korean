@@ -751,7 +751,7 @@ public class AltibaseDialect extends BasicSQLDialect {
 
     @Override
     public String[] getDesiredTablesType() {
-        return new String[] { "TABLE", "VIEW", "MATERIALIZED VIEW" };
+        return new String[] {"TABLE", "VIEW", "MATERIALIZED VIEW", "SYNONYM"};
     }
 
     @Override

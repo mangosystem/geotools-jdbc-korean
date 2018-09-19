@@ -252,12 +252,12 @@ public class TiberoPSDialect extends PreparedStatementSQLDialect {
 
     @SuppressWarnings("rawtypes")
     @Override
-    public void prepareGeometryValue(Geometry g, int dimension, int srid, Class binding,
-            StringBuffer sql) {
-        if (g != null) {
+    public void prepareGeometryValue(Class<? extends Geometry> gClass, int dimension, int srid,
+            Class binding, StringBuffer sql) {
+        if (gClass != null) {
             sql.append("ST_GEOMFROMWKB(?)");
         } else {
-            super.prepareGeometryValue(g, dimension, srid, binding, sql);
+            super.prepareGeometryValue(gClass, dimension, srid, binding, sql);
         }
     }
 
@@ -282,6 +282,7 @@ public class TiberoPSDialect extends PreparedStatementSQLDialect {
     public PreparedFilterToSQL createPreparedFilterToSQL() {
         TiberoPSFilterToSql fts = new TiberoPSFilterToSql(this);
         fts.setLooseBBOXEnabled(delegate.isLooseBBOXEnabled());
+        // fts.setEncodeBBOXFilterAsEnvelope(delegate.isEncodeBBOXFilterAsEnvelope());
         return fts;
     }
 }

@@ -251,12 +251,12 @@ public class KairosPSDialect extends PreparedStatementSQLDialect {
 
     @SuppressWarnings("rawtypes")
     @Override
-    public void prepareGeometryValue(Geometry g, int dimension, int srid, Class binding,
-            StringBuffer sql) {
-        if (g != null) {
+    public void prepareGeometryValue(Class<? extends Geometry> gClass, int dimension, int srid,
+            Class binding, StringBuffer sql) {
+        if (gClass != null) {
             sql.append("ST_GEOMFROMWKB(?, " + srid + ")");
         } else {
-            super.prepareGeometryValue(g, dimension, srid, binding, sql);
+            super.prepareGeometryValue(gClass, dimension, srid, binding, sql);
         }
     }
 

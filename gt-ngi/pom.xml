@@ -17,7 +17,7 @@
   <packaging>jar</packaging>
   <name>NGI DataStore</name>
   <description>DataStore for NGI Geodatabase.</description>
-  <version>14.5</version>
+  <version>15.4</version>
   
   <licenses>
     <license>

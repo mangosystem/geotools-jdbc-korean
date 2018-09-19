@@ -8,6 +8,8 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import javax.measure.unit.SI;
+
 import org.geotools.data.DataStore;
 import org.geotools.data.DataStoreFinder;
 import org.geotools.data.DataUtilities;
@@ -30,12 +32,18 @@ import org.opengis.filter.Filter;
 import org.opengis.filter.FilterFactory2;
 import org.opengis.referencing.FactoryException;
 import org.opengis.referencing.NoSuchAuthorityCodeException;
+import org.opengis.referencing.crs.CoordinateReferenceSystem;
 
-import com.vividsolutions.jts.geom.Geometry;
+import com.vividsolutions.jts.geom.GeometryFactory;
+import com.vividsolutions.jts.geom.Point;
 import com.vividsolutions.jts.io.ParseException;
 
 public class TiberoTest {
     protected static final Logger LOGGER = Logging.getLogger(TiberoTest.class);
+
+    FilterFactory2 ff = CommonFactoryFinder.getFilterFactory2(null);
+
+    GeometryFactory gf = new GeometryFactory();
 
     public static void main(String[] args) throws IOException, NoSuchAuthorityCodeException,
             FactoryException, ParseException {
@@ -54,18 +62,17 @@ public class TiberoTest {
         for (Name typeName : typeNames) {
             SimpleFeatureSource sfs = dataStore.getFeatureSource(typeName);
             ReferencedEnvelope extent = sfs.getBounds();
+
+            System.out.println(sfs.getName().toString() + " = " + sfs.getCount(Query.ALL));
             System.out.println(typeName + "'s extent = " + extent.toString());
-            if (sfs.getSchema().getGeometryDescriptor() == null) {
-                System.out.println(sfs.getName().toString() + " = " + sfs.getCount(Query.ALL));
-            } else {
-                System.out.println(sfs.getSchema().getGeometryDescriptor().getType());
-                System.out.println(sfs.getName().toString() + " = " + sfs.getCount(Query.ALL));
-            }
+
+            CoordinateReferenceSystem crs = sfs.getSchema().getCoordinateReferenceSystem();
+            System.out.println(crs);
         }
 
         // upload shapefile: road point line polygon
-        String typeName = "road";
-        DataStore shpStore = getShapefileDataStore("C:/data/road");
+        String typeName = "AL_11_D002_20160604";
+        DataStore shpStore = getShapefileDataStore("C:/spatial_data/NSDI/연속지적도형정보");
         SimpleFeatureSource shp_sfs = shpStore.getFeatureSource(typeName);
         System.out.println(shp_sfs.getName().toString() + " = " + shp_sfs.getCount(Query.ALL));
 
@@ -76,11 +83,28 @@ public class TiberoTest {
 
         // filter test
         String geom = out.getSchema().getGeometryDescriptor().getLocalName();
-        Geometry bounds = JTS.toGeometry(out.getBounds());
+        ReferencedEnvelope extent = out.getBounds();
 
-        FilterFactory2 ff = CommonFactoryFinder.getFilterFactory2(null);
-        Filter filter = ff.intersects(ff.property(geom), ff.literal(bounds));
-        System.out.println("Intersects = " + out.getFeatures(filter).size());
+        // Intersect filter
+        Filter filter = ff.intersects(ff.property(geom), ff.literal(JTS.toGeometry(extent)));
+        System.out.println("Intersects Filter = " + out.getFeatures(filter).size());
+
+        extent.expandBy(-extent.getWidth() / 3);
+        filter = ff.intersects(ff.property(geom), ff.literal(JTS.toGeometry(extent)));
+        System.out.println("Intersects Filter = " + out.getFeatures(filter).size());
+
+        filter = ff.disjoint(ff.property(geom), ff.literal(JTS.toGeometry(extent)));
+        System.out.println("Disjoint Filter = " + out.getFeatures(filter).size());
+
+        // BBOX Filter
+        filter = ff.bbox(ff.property(geom), extent);
+        System.out.println("BBOX Filter = " + out.getFeatures(filter).size());
+
+        // Distance Filter = DWithin, Beyond
+        // Tibero does not support DWithin, Beyond, so wi should use ST_Distance function!
+        Point center = gf.createPoint(extent.centre());
+        filter = ff.dwithin(ff.property(geom), ff.literal(center), 500, SI.METRE.getSymbol());
+        System.out.println("DWithin Filter = " + out.getFeatures(filter).size());
 
         dataStore.dispose();
 
@@ -90,7 +114,7 @@ public class TiberoTest {
     private SimpleFeatureSource uploadFeatures(SimpleFeatureSource source, DataStore targetStore,
             String targetName) throws IOException {
         int flushInterval = 1000;
-        boolean overwrite = true;
+        boolean overwrite = false;
 
         try {
             SimpleFeatureType existType = targetStore.getSchema(targetName);
@@ -178,7 +202,8 @@ public class TiberoTest {
         params.put(JDBCDataStoreFactory.PORT.key, "8629");
         params.put(JDBCDataStoreFactory.USER.key, "sysgis");
         params.put(JDBCDataStoreFactory.PASSWD.key, "tibero");
-        params.put(TiberoNGDataStoreFactory.PREPARED_STATEMENTS.key, Boolean.TRUE);
+        params.put(JDBCDataStoreFactory.EXPOSE_PK.key, Boolean.FALSE);
+        params.put(TiberoNGDataStoreFactory.PREPARED_STATEMENTS.key, Boolean.FALSE);
         return params;
     }
 

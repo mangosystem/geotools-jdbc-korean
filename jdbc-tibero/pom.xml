@@ -16,7 +16,7 @@
   <artifactId>gt-jdbc-tibero</artifactId>
   <packaging>jar</packaging>
   <name>Tibero DataStore</name>
-  <version>14.5</version>
+  <version>15.4</version>
   <description>DataStore for Tibero Database.</description>
   
   <licenses>
@@ -92,6 +92,21 @@
     <dependency>
       <groupId>org.geotools</groupId>
       <artifactId>gt-data</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.geotools</groupId>
+      <artifactId>gt-referencing</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.geotools</groupId>
+      <artifactId>gt-epsg-hsql</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.geotools</groupId>
+      <artifactId>gt-epsg-extension</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
