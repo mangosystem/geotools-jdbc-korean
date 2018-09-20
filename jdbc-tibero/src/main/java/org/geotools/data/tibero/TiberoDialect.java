@@ -492,7 +492,6 @@ public class TiberoDialect extends BasicSQLDialect {
             throws SQLException {
         Statement st = cx.createStatement();
         try {
-            // SELECT seq_building_fid.NEXTVAL FROM DUAL;
             String sql = "SELECT \"" + sequenceName + "\".NEXTVAL FROM DUAL";
 
             dataStore.getLogger().fine(sql);
@@ -522,7 +521,6 @@ public class TiberoDialect extends BasicSQLDialect {
 
         Statement st = cx.createStatement();
         try {
-            // String sql = "SELECT lastval()";
             String sequenceName = getSequenceForColumn(schemaName, tableName, "fid", cx);
             String sql = "SELECT \"" + sequenceName + "\".CURRVAL FROM DUAL";
             dataStore.getLogger().fine(sql);
