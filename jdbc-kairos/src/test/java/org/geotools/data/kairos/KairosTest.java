@@ -27,18 +27,15 @@ import org.geotools.factory.CommonFactoryFinder;
 import org.geotools.geometry.jts.JTS;
 import org.geotools.jdbc.JDBCDataStoreFactory;
 import org.geotools.util.logging.Logging;
+import org.locationtech.jts.geom.Geometry;
+import org.locationtech.jts.io.ParseException;
+import org.locationtech.jts.io.WKTReader;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
 import org.opengis.filter.Filter;
 import org.opengis.filter.FilterFactory2;
 import org.opengis.referencing.FactoryException;
 import org.opengis.referencing.NoSuchAuthorityCodeException;
-
-import com.vividsolutions.jts.geom.Geometry;
-import com.vividsolutions.jts.io.ByteOrderValues;
-import com.vividsolutions.jts.io.ParseException;
-import com.vividsolutions.jts.io.WKBWriter;
-import com.vividsolutions.jts.io.WKTReader;
 
 public class KairosTest {
     protected static final Logger LOGGER = Logging.getLogger(KairosTest.class);

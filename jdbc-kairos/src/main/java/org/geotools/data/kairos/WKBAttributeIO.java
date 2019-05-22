@@ -7,11 +7,10 @@ import java.sql.SQLException;
 import java.sql.Types;
 
 import org.geotools.data.DataSourceException;
-
-import com.vividsolutions.jts.geom.Geometry;
-import com.vividsolutions.jts.geom.GeometryFactory;
-import com.vividsolutions.jts.io.ByteArrayInStream;
-import com.vividsolutions.jts.io.WKBWriter;
+import org.locationtech.jts.geom.Geometry;
+import org.locationtech.jts.geom.GeometryFactory;
+import org.locationtech.jts.io.ByteArrayInStream;
+import org.locationtech.jts.io.WKBWriter;
 
 /**
  * An attribute IO implementation that can manage the WKB

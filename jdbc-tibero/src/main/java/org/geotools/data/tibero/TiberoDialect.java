@@ -39,24 +39,23 @@ import org.geotools.jdbc.ColumnMetadata;
 import org.geotools.jdbc.JDBCDataStore;
 import org.geotools.referencing.CRS;
 import org.geotools.util.Version;
+import org.locationtech.jts.geom.Envelope;
+import org.locationtech.jts.geom.Geometry;
+import org.locationtech.jts.geom.GeometryCollection;
+import org.locationtech.jts.geom.GeometryFactory;
+import org.locationtech.jts.geom.LineString;
+import org.locationtech.jts.geom.LinearRing;
+import org.locationtech.jts.geom.MultiLineString;
+import org.locationtech.jts.geom.MultiPoint;
+import org.locationtech.jts.geom.MultiPolygon;
+import org.locationtech.jts.geom.Point;
+import org.locationtech.jts.geom.Polygon;
+import org.locationtech.jts.io.ParseException;
+import org.locationtech.jts.io.WKTReader;
 import org.opengis.feature.simple.SimpleFeatureType;
 import org.opengis.feature.type.AttributeDescriptor;
 import org.opengis.feature.type.GeometryDescriptor;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
-
-import com.vividsolutions.jts.geom.Envelope;
-import com.vividsolutions.jts.geom.Geometry;
-import com.vividsolutions.jts.geom.GeometryCollection;
-import com.vividsolutions.jts.geom.GeometryFactory;
-import com.vividsolutions.jts.geom.LineString;
-import com.vividsolutions.jts.geom.LinearRing;
-import com.vividsolutions.jts.geom.MultiLineString;
-import com.vividsolutions.jts.geom.MultiPoint;
-import com.vividsolutions.jts.geom.MultiPolygon;
-import com.vividsolutions.jts.geom.Point;
-import com.vividsolutions.jts.geom.Polygon;
-import com.vividsolutions.jts.io.ParseException;
-import com.vividsolutions.jts.io.WKTReader;
 
 public class TiberoDialect extends BasicSQLDialect {
 
@@ -179,7 +178,6 @@ public class TiberoDialect extends BasicSQLDialect {
 
     ThreadLocal<WKBAttributeIO> wkbReader = new ThreadLocal<WKBAttributeIO>();
 
-    @Override
     public Geometry decodeGeometryValue(GeometryDescriptor descriptor, ResultSet rs, String column,
             GeometryFactory factory, Connection cx) throws IOException, SQLException {
         WKBAttributeIO reader = getWKBReader(factory);
@@ -188,6 +186,13 @@ public class TiberoDialect extends BasicSQLDialect {
 
     public Geometry decodeGeometryValue(GeometryDescriptor descriptor, ResultSet rs, int column,
             GeometryFactory factory, Connection cx) throws IOException, SQLException {
+        WKBAttributeIO reader = getWKBReader(factory);
+        return (Geometry) reader.read(rs, column);
+    }
+
+    @Override
+    public Geometry decodeGeometryValue(GeometryDescriptor descriptor, ResultSet rs, String column,
+            GeometryFactory factory, Connection cx, Hints hints) throws IOException, SQLException {
         WKBAttributeIO reader = getWKBReader(factory);
         return (Geometry) reader.read(rs, column);
     }
@@ -227,8 +232,8 @@ public class TiberoDialect extends BasicSQLDialect {
     }
 
     @Override
-    public List<ReferencedEnvelope> getOptimizedBounds(String schema,
-            SimpleFeatureType featureType, Connection cx) throws SQLException, IOException {
+    public List<ReferencedEnvelope> getOptimizedBounds(String schema, SimpleFeatureType featureType,
+            Connection cx) throws SQLException, IOException {
         if (!estimatedExtentsEnabled) {
             return null;
         }
@@ -426,8 +431,8 @@ public class TiberoDialect extends BasicSQLDialect {
                     srid = result.getInt(1);
                 }
             } catch (SQLException e) {
-                LOGGER.log(Level.WARNING, "Failed to retrieve information about " + schemaName
-                        + "." + tableName + "." + columnName
+                LOGGER.log(Level.WARNING, "Failed to retrieve information about " + schemaName + "."
+                        + tableName + "." + columnName
                         + " from the geometry_columns table, checking the first geometry instead",
                         e);
             } finally {
@@ -465,8 +470,8 @@ public class TiberoDialect extends BasicSQLDialect {
                     dimension = result.getInt(1);
                 }
             } catch (SQLException e) {
-                LOGGER.log(Level.WARNING, "Failed to retrieve information about " + schemaName
-                        + "." + tableName + "." + columnName
+                LOGGER.log(Level.WARNING, "Failed to retrieve information about " + schemaName + "."
+                        + tableName + "." + columnName
                         + " from the geometry_columns table, checking the first geometry instead",
                         e);
             } finally {
@@ -741,8 +746,8 @@ public class TiberoDialect extends BasicSQLDialect {
         } else {
             if (value instanceof LinearRing) {
                 // WKT does not support linear rings
-                value = value.getFactory().createLineString(
-                        ((LinearRing) value).getCoordinateSequence());
+                value = value.getFactory()
+                        .createLineString(((LinearRing) value).getCoordinateSequence());
             }
 
             sql.append("ST_GEOMFROMTEXT('" + value.toText() + "')");

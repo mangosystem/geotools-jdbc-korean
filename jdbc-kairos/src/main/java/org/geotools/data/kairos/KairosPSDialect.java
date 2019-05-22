@@ -32,15 +32,14 @@ import org.geotools.jdbc.ColumnMetadata;
 import org.geotools.jdbc.JDBCDataStore;
 import org.geotools.jdbc.PreparedFilterToSQL;
 import org.geotools.jdbc.PreparedStatementSQLDialect;
+import org.locationtech.jts.geom.Envelope;
+import org.locationtech.jts.geom.Geometry;
+import org.locationtech.jts.geom.GeometryFactory;
+import org.locationtech.jts.geom.LinearRing;
+import org.locationtech.jts.io.WKBWriter;
 import org.opengis.feature.simple.SimpleFeatureType;
 import org.opengis.feature.type.AttributeDescriptor;
 import org.opengis.feature.type.GeometryDescriptor;
-
-import com.vividsolutions.jts.geom.Envelope;
-import com.vividsolutions.jts.geom.Geometry;
-import com.vividsolutions.jts.geom.GeometryFactory;
-import com.vividsolutions.jts.geom.LinearRing;
-import com.vividsolutions.jts.io.WKBWriter;
 
 public class KairosPSDialect extends PreparedStatementSQLDialect {
 
@@ -83,16 +82,20 @@ public class KairosPSDialect extends PreparedStatementSQLDialect {
         return delegate.includeTable(schemaName, tableName, cx);
     }
 
-    @Override
     public Geometry decodeGeometryValue(GeometryDescriptor descriptor, ResultSet rs, int column,
+            GeometryFactory factory, Connection cx) throws IOException, SQLException {
+        return delegate.decodeGeometryValue(descriptor, rs, column, factory, cx);
+    }
+
+    public Geometry decodeGeometryValue(GeometryDescriptor descriptor, ResultSet rs, String column,
             GeometryFactory factory, Connection cx) throws IOException, SQLException {
         return delegate.decodeGeometryValue(descriptor, rs, column, factory, cx);
     }
 
     @Override
     public Geometry decodeGeometryValue(GeometryDescriptor descriptor, ResultSet rs, String column,
-            GeometryFactory factory, Connection cx) throws IOException, SQLException {
-        return delegate.decodeGeometryValue(descriptor, rs, column, factory, cx);
+            GeometryFactory factory, Connection cx, Hints hints) throws IOException, SQLException {
+        return delegate.decodeGeometryValue(descriptor, rs, column, factory, cx, hints);
     }
 
     @Override
@@ -112,8 +115,8 @@ public class KairosPSDialect extends PreparedStatementSQLDialect {
     }
 
     @Override
-    public List<ReferencedEnvelope> getOptimizedBounds(String schema,
-            SimpleFeatureType featureType, Connection cx) throws SQLException, IOException {
+    public List<ReferencedEnvelope> getOptimizedBounds(String schema, SimpleFeatureType featureType,
+            Connection cx) throws SQLException, IOException {
         return delegate.getOptimizedBounds(schema, featureType, cx);
     }
 
