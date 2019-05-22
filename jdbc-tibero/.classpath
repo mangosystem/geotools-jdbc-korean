@@ -7,32 +7,33 @@
   <classpathentry kind="var" path="M2_REPO/javax/measure/unit-api/1.0/unit-api-1.0.jar" sourcepath="M2_REPO/javax/measure/unit-api/1.0/unit-api-1.0-sources.jar"/>
   <classpathentry kind="var" path="M2_REPO/javax/media/jai_core/1.1.3/jai_core-1.1.3.jar"/>
   <classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
-  <classpathentry kind="var" path="M2_REPO/org/geotools/gt-api/20-SNAPSHOT/gt-api-20-SNAPSHOT.jar" sourcepath="M2_REPO/org/geotools/gt-api/20-SNAPSHOT/gt-api-20-SNAPSHOT-sources.jar"/>
-  <classpathentry kind="var" path="M2_REPO/org/locationtech/jts/jts-core/1.16.0/jts-core-1.16.0.jar" sourcepath="M2_REPO/org/locationtech/jts/jts-core/1.16.0/jts-core-1.16.0-sources.jar"/>
-  <classpathentry kind="var" path="M2_REPO/org/geotools/gt-referencing/20-SNAPSHOT/gt-referencing-20-SNAPSHOT.jar" sourcepath="M2_REPO/org/geotools/gt-referencing/20-SNAPSHOT/gt-referencing-20-SNAPSHOT-sources.jar"/>
+  <classpathentry kind="var" path="M2_REPO/org/geotools/gt-main/21-SNAPSHOT/gt-main-21-SNAPSHOT.jar"/>
+  <classpathentry kind="var" path="M2_REPO/org/geotools/gt-referencing/21-SNAPSHOT/gt-referencing-21-SNAPSHOT.jar"/>
   <classpathentry kind="var" path="M2_REPO/org/ejml/ejml-ddense/0.34/ejml-ddense-0.34.jar" sourcepath="M2_REPO/org/ejml/ejml-ddense/0.34/ejml-ddense-0.34-sources.jar"/>
   <classpathentry kind="var" path="M2_REPO/org/ejml/ejml-core/0.34/ejml-core-0.34.jar" sourcepath="M2_REPO/org/ejml/ejml-core/0.34/ejml-core-0.34-sources.jar"/>
   <classpathentry kind="var" path="M2_REPO/commons-pool/commons-pool/1.5.4/commons-pool-1.5.4.jar" sourcepath="M2_REPO/commons-pool/commons-pool/1.5.4/commons-pool-1.5.4-sources.jar"/>
-  <classpathentry kind="var" path="M2_REPO/org/geotools/gt-metadata/20-SNAPSHOT/gt-metadata-20-SNAPSHOT.jar" sourcepath="M2_REPO/org/geotools/gt-metadata/20-SNAPSHOT/gt-metadata-20-SNAPSHOT-sources.jar"/>
-  <classpathentry kind="var" path="M2_REPO/org/geotools/gt-opengis/20-SNAPSHOT/gt-opengis-20-SNAPSHOT.jar" sourcepath="M2_REPO/org/geotools/gt-opengis/20-SNAPSHOT/gt-opengis-20-SNAPSHOT-sources.jar"/>
+  <classpathentry kind="var" path="M2_REPO/org/geotools/gt-metadata/21-SNAPSHOT/gt-metadata-21-SNAPSHOT.jar"/>
+  <classpathentry kind="var" path="M2_REPO/org/geotools/gt-opengis/21-SNAPSHOT/gt-opengis-21-SNAPSHOT.jar"/>
   <classpathentry kind="var" path="M2_REPO/systems/uom/systems-common-java8/0.7.2/systems-common-java8-0.7.2.jar" sourcepath="M2_REPO/systems/uom/systems-common-java8/0.7.2/systems-common-java8-0.7.2-sources.jar"/>
   <classpathentry kind="var" path="M2_REPO/tec/uom/uom-se/1.0.8/uom-se-1.0.8.jar" sourcepath="M2_REPO/tec/uom/uom-se/1.0.8/uom-se-1.0.8-sources.jar"/>
   <classpathentry kind="var" path="M2_REPO/tec/uom/lib/uom-lib-common/1.0.2/uom-lib-common-1.0.2.jar" sourcepath="M2_REPO/tec/uom/lib/uom-lib-common/1.0.2/uom-lib-common-1.0.2-sources.jar"/>
   <classpathentry kind="var" path="M2_REPO/si/uom/si-quantity/0.7.1/si-quantity-0.7.1.jar" sourcepath="M2_REPO/si/uom/si-quantity/0.7.1/si-quantity-0.7.1-sources.jar"/>
   <classpathentry kind="var" path="M2_REPO/si/uom/si-units-java8/0.7.1/si-units-java8-0.7.1.jar" sourcepath="M2_REPO/si/uom/si-units-java8/0.7.1/si-units-java8-0.7.1-sources.jar"/>
+  <classpathentry kind="var" path="M2_REPO/org/apache/commons/commons-lang3/3.8.1/commons-lang3-3.8.1.jar" sourcepath="M2_REPO/org/apache/commons/commons-lang3/3.8.1/commons-lang3-3.8.1-sources.jar"/>
   <classpathentry kind="var" path="M2_REPO/jgridshift/jgridshift/1.0/jgridshift-1.0.jar"/>
   <classpathentry kind="var" path="M2_REPO/net/sf/geographiclib/GeographicLib-Java/1.49/GeographicLib-Java-1.49.jar" sourcepath="M2_REPO/net/sf/geographiclib/GeographicLib-Java/1.49/GeographicLib-Java-1.49-sources.jar"/>
-  <classpathentry kind="var" path="M2_REPO/org/geotools/gt-main/20-SNAPSHOT/gt-main-20-SNAPSHOT.jar" sourcepath="M2_REPO/org/geotools/gt-main/20-SNAPSHOT/gt-main-20-SNAPSHOT-sources.jar"/>
+  <classpathentry kind="var" path="M2_REPO/org/locationtech/jts/jts-core/1.16.0/jts-core-1.16.0.jar" sourcepath="M2_REPO/org/locationtech/jts/jts-core/1.16.0/jts-core-1.16.0-sources.jar"/>
   <classpathentry kind="var" path="M2_REPO/org/jdom/jdom2/2.0.6/jdom2-2.0.6.jar" sourcepath="M2_REPO/org/jdom/jdom2/2.0.6/jdom2-2.0.6-sources.jar"/>
+  <classpathentry kind="var" path="M2_REPO/org/apache/commons/commons-text/1.6/commons-text-1.6.jar" sourcepath="M2_REPO/org/apache/commons/commons-text/1.6/commons-text-1.6-sources.jar"/>
   <classpathentry kind="var" path="M2_REPO/com/fasterxml/jackson/core/jackson-core/2.9.7/jackson-core-2.9.7.jar" sourcepath="M2_REPO/com/fasterxml/jackson/core/jackson-core/2.9.7/jackson-core-2.9.7-sources.jar"/>
-  <classpathentry kind="var" path="M2_REPO/org/geotools/gt-data/20-SNAPSHOT/gt-data-20-SNAPSHOT.jar" sourcepath="M2_REPO/org/geotools/gt-data/20-SNAPSHOT/gt-data-20-SNAPSHOT-sources.jar"/>
-  <classpathentry kind="var" path="M2_REPO/org/geotools/gt-epsg-hsql/20-SNAPSHOT/gt-epsg-hsql-20-SNAPSHOT.jar" sourcepath="M2_REPO/org/geotools/gt-epsg-hsql/20-SNAPSHOT/gt-epsg-hsql-20-SNAPSHOT-sources.jar"/>
+  <classpathentry kind="var" path="M2_REPO/org/geotools/gt-data/21-SNAPSHOT/gt-data-21-SNAPSHOT.jar"/>
+  <classpathentry kind="var" path="M2_REPO/org/geotools/gt-epsg-hsql/21-SNAPSHOT/gt-epsg-hsql-21-SNAPSHOT.jar"/>
   <classpathentry kind="var" path="M2_REPO/org/hsqldb/hsqldb/2.4.1/hsqldb-2.4.1.jar" sourcepath="M2_REPO/org/hsqldb/hsqldb/2.4.1/hsqldb-2.4.1-sources.jar"/>
-  <classpathentry kind="var" path="M2_REPO/org/geotools/gt-epsg-extension/20-SNAPSHOT/gt-epsg-extension-20-SNAPSHOT.jar" sourcepath="M2_REPO/org/geotools/gt-epsg-extension/20-SNAPSHOT/gt-epsg-extension-20-SNAPSHOT-sources.jar"/>
-  <classpathentry kind="var" path="M2_REPO/org/geotools/gt-jdbc/20-SNAPSHOT/gt-jdbc-20-SNAPSHOT.jar" sourcepath="M2_REPO/org/geotools/gt-jdbc/20-SNAPSHOT/gt-jdbc-20-SNAPSHOT-sources.jar"/>
+  <classpathentry kind="var" path="M2_REPO/org/geotools/gt-epsg-extension/21-SNAPSHOT/gt-epsg-extension-21-SNAPSHOT.jar"/>
+  <classpathentry kind="var" path="M2_REPO/org/geotools/gt-jdbc/21-SNAPSHOT/gt-jdbc-21-SNAPSHOT.jar"/>
   <classpathentry kind="var" path="M2_REPO/commons-dbcp/commons-dbcp/1.4/commons-dbcp-1.4.jar" sourcepath="M2_REPO/commons-dbcp/commons-dbcp/1.4/commons-dbcp-1.4-sources.jar"/>
   <classpathentry kind="var" path="M2_REPO/commons-collections/commons-collections/3.2.2/commons-collections-3.2.2.jar" sourcepath="M2_REPO/commons-collections/commons-collections/3.2.2/commons-collections-3.2.2-sources.jar"/>
-  <classpathentry kind="var" path="M2_REPO/org/geotools/gt-shapefile/20-SNAPSHOT/gt-shapefile-20-SNAPSHOT.jar" sourcepath="M2_REPO/org/geotools/gt-shapefile/20-SNAPSHOT/gt-shapefile-20-SNAPSHOT-sources.jar"/>
+  <classpathentry kind="var" path="M2_REPO/org/geotools/gt-shapefile/21-SNAPSHOT/gt-shapefile-21-SNAPSHOT.jar"/>
   <classpathentry kind="var" path="M2_REPO/commons-io/commons-io/2.1/commons-io-2.1.jar" sourcepath="M2_REPO/commons-io/commons-io/2.1/commons-io-2.1-sources.jar"/>
   <classpathentry kind="var" path="M2_REPO/junit/junit/4.11/junit-4.11.jar" sourcepath="M2_REPO/junit/junit/4.11/junit-4.11-sources.jar"/>
   <classpathentry kind="var" path="M2_REPO/org/hamcrest/hamcrest-core/1.3/hamcrest-core-1.3.jar" sourcepath="M2_REPO/org/hamcrest/hamcrest-core/1.3/hamcrest-core-1.3-sources.jar"/>

@@ -16,7 +16,7 @@
   <artifactId>gt-jdbc-kairos</artifactId>
   <packaging>jar</packaging>
   <name>Kairos DataStore</name>
-  <version>20-SNAPSHOT</version>
+  <version>21-SNAPSHOT</version>
   <description>DataStore for Kairos Database.</description>
   
   <licenses>
@@ -91,11 +91,6 @@
   <!--     Dependency Management                                   -->
   <!-- =========================================================== -->
   <dependencies>
-    <dependency>
-      <groupId>org.geotools</groupId>
-      <artifactId>gt-api</artifactId>
-      <version>${project.version}</version>
-    </dependency>
     <dependency>
       <groupId>org.geotools</groupId>
       <artifactId>gt-main</artifactId>
