@@ -16,7 +16,7 @@
   <artifactId>gt-jdbc-kairos</artifactId>
   <packaging>jar</packaging>
   <name>Kairos DataStore</name>
-  <version>21-SNAPSHOT</version>
+  <version>24-SNAPSHOT</version>
   <description>DataStore for Kairos Database.</description>
   
   <licenses>
@@ -32,26 +32,38 @@
     <maven.compiler.source>1.8</maven.compiler.source>
     <maven.compiler.target>1.8</maven.compiler.target>
     <allow.test.skip>true</allow.test.skip>
-    <allow.test.failure.ignore>false</allow.test.failure.ignore>
+    <allow.test.failure.ignore>true</allow.test.failure.ignore>
   </properties>
   
   <repositories>
     <repository>
-      <id>boundless</id>
-      <name>Boundless Maven Repository</name>
-      <url>>https://repo.boundlessgeo.com/main/</url>
-      <snapshots>
-        <enabled>true</enabled>
-      </snapshots>
-    </repository>
-    <repository>
-      <id>osgeo</id>
-      <name>Open Source Geospatial Foundation Repository</name>
-      <url>http://download.osgeo.org/webdav/geotools/</url>
+      <id>central.maven.org</id>
+      <name>Central Maven repository</name>
+      <url>http://central.maven.org/maven2</url>
       <snapshots>
         <enabled>false</enabled>
       </snapshots>
     </repository>
+    
+    <repository>
+      <id>osgeo</id>
+      <name>OSGeo Nexus Release Repository</name>
+      <url>https://repo.osgeo.org/repository/release/</url>
+      <!-- contains release (including third-party-dependences)                            -->
+      <!-- ucar (https://artifacts.unidata.ucar.edu/content/repositories/unidata-releases) -->
+      <!-- geosolutions (http://maven.geo-solutions.it/)                                   -->
+      <snapshots><enabled>false</enabled></snapshots>
+      <releases><enabled>true</enabled></releases>
+    </repository>
+
+    <repository>
+      <id>osgeo-snapshot</id>
+      <name>OSGeo Nexus Snapshot Repository</name>
+      <url>https://repo.osgeo.org/repository/snapshot/</url>
+      <snapshots><enabled>true</enabled></snapshots>
+      <releases><enabled>false</enabled></releases>
+    </repository>
+    
     <repository>
       <id>geosolutions</id>
       <name>GeoSolutions Repository</name>
@@ -60,6 +72,7 @@
         <enabled>false</enabled>
       </snapshots>
     </repository>
+    
     <repository>
       <id>maven-restlet</id>
       <name>Restlet Maven Repository</name>
@@ -98,11 +111,6 @@
     </dependency>
     <dependency>
       <groupId>org.geotools</groupId>
-      <artifactId>gt-data</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.geotools</groupId>
       <artifactId>gt-referencing</artifactId>
       <version>${project.version}</version>
     </dependency>
@@ -134,12 +142,73 @@
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
-      <version>4.11</version>
+      <version>4.12</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
   
   <build>
+    <plugins>
+      <!-- ======================================================= -->
+      <!--     Compilation.                                        -->
+      <!-- ======================================================= -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.8.0</version>
+        <configuration>
+          <source>1.8</source>  <!-- The -source argument for the Java compiler. -->
+          <target>1.8</target>  <!-- The -target argument for the Java compiler. -->
+          <debug>true</debug>   <!-- Whether to include debugging information.   -->
+          <encoding>UTF-8</encoding> <!-- The -encoding argument for the Java compiler. -->
+          <fork>${fork.javac}</fork>
+          <maxmem>${javac.maxHeapSize}</maxmem>
+        </configuration>
+      </plugin>
+    
+      <!-- ======================================================= -->
+      <!--     JAR packaging.                                      -->
+      <!-- ======================================================= -->
+      <plugin>
+        <artifactId>maven-jar-plugin</artifactId>
+        <version>3.1.0</version>
+        <configuration>
+          <archive>
+            <index>true</index>
+            <manifest>
+              <addClasspath>false</addClasspath>
+            </manifest>
+            <manifestEntries>
+              <Specification-Title>${project.artifactId}</Specification-Title>
+              <Specification-Version>${project.version}</Specification-Version>
+              <Specification-Vendor>${project.url}</Specification-Vendor>
+            </manifestEntries>
+          </archive>
+        </configuration>
+      </plugin>
+      
+      <!-- ======================================================= -->
+      <!--     Source packaging.                                      -->
+      <!-- ======================================================= -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-source-plugin</artifactId>
+        <version>3.0.1</version>
+        <inherited>true</inherited>
+        <configuration>
+          <attach>true</attach>
+        </configuration>
+        <executions>
+          <execution>
+            <id>attach-sources</id>
+            <goals>
+              <goal>jar</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+    
     <pluginManagement>
       <plugins>
         <!--This plugin's configuration is used to store Eclipse m2e settings only. It has no influence on the Maven build itself.-->

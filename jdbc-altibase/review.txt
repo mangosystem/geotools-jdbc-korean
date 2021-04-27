@@ -17,6 +17,9 @@ ClassName
  - 6.x 버전(Altibase.jar) : Altibase.jdbc.driver.AltibaseDriver
  - 7.x 버전(Altibase.jar) : Altibase.jdbc.driver.AltibaseDriver
  
+Altibase 7.1 주요 변경사항
+ - https://github.com/ALTIBASE/Altibase-GeoServer-Plugin
+
 URL(공통)
  - jdbc:Altibase://host:20300/mydb?encoding=UTF8
  - encoding=UTF8, US7ASCII, KO16KSC5601, MS949 가능. 

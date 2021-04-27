@@ -15,7 +15,6 @@ import java.util.logging.Logger;
 
 import org.geotools.data.DataStore;
 import org.geotools.data.DataStoreFinder;
-import org.geotools.data.DataUtilities;
 import org.geotools.data.DefaultTransaction;
 import org.geotools.data.FeatureWriter;
 import org.geotools.data.Query;
@@ -26,6 +25,7 @@ import org.geotools.data.simple.SimpleFeatureStore;
 import org.geotools.factory.CommonFactoryFinder;
 import org.geotools.geometry.jts.JTS;
 import org.geotools.jdbc.JDBCDataStoreFactory;
+import org.geotools.util.URLs;
 import org.geotools.util.logging.Logging;
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.io.ParseException;
@@ -277,7 +277,7 @@ public class KairosTest {
         Map<String, Object> params = new HashMap<String, Object>();
 
         final File file = new File(folder);
-        params.put("url", DataUtilities.fileToURL(file));
+        params.put("url", URLs.fileToUrl(file));
         params.put("charset", "x-windows-949");
 
         return DataStoreFinder.getDataStore(params);
