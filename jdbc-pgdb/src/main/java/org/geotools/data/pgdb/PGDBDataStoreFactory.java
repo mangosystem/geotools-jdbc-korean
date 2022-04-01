@@ -18,20 +18,16 @@ package org.geotools.data.pgdb;
 
 import java.awt.RenderingHints.Key;
 import java.io.IOException;
-import java.io.Serializable;
 import java.net.URL;
 import java.util.Collections;
 import java.util.Map;
-import java.util.logging.Logger;
 
-import org.geotools.data.AbstractDataStoreFactory;
 import org.geotools.data.DataStore;
 import org.geotools.data.DataStoreFactorySpi;
-import org.geotools.data.DataUtilities;
 import org.geotools.data.Parameter;
 import org.geotools.util.KVP;
 import org.geotools.util.SimpleInternationalString;
-import org.geotools.util.logging.Logging;
+import org.geotools.util.URLs;
 
 /**
  * ESRI Personal Geodatabase DataStoreFactory
@@ -41,13 +37,11 @@ import org.geotools.util.logging.Logging;
  * @see
  * 
  */
-public class PGDBDataStoreFactory extends AbstractDataStoreFactory implements DataStoreFactorySpi {
-    protected static final Logger LOGGER = Logging.getLogger(PGDBDataStoreFactory.class);
-
+public class PGDBDataStoreFactory implements DataStoreFactorySpi {
     static final String FILE_TYPE = "mdb";
 
     public static final Param PARAM_FILE = new Param("url", URL.class,
-            "url to a ESRI Personal Geodatabase(.mdb) file", true, null, new KVP(Param.EXT,
+            "URL to a ESRI Personal Geodatabase(.mdb) file", true, null, new KVP(Param.EXT,
                     FILE_TYPE));
 
     /** parameter for database user */
@@ -55,7 +49,7 @@ public class PGDBDataStoreFactory extends AbstractDataStoreFactory implements Da
 
     /** parameter for database password */
     public static final Param PARAM_PASSWD = new Param("passwd", String.class,
-            new SimpleInternationalString("password used to login"), false, null,
+            new SimpleInternationalString("Password used to login"), false, null,
             Collections.singletonMap(Parameter.IS_PASSWORD, Boolean.TRUE));
 
     public String getDisplayName() {
@@ -93,18 +87,19 @@ public class PGDBDataStoreFactory extends AbstractDataStoreFactory implements Da
         return result;
     }
 
-    public DataStore createDataStore(Map<String, Serializable> params) throws IOException {
+    @Override
+    public DataStore createDataStore(Map<String, ?> params) throws IOException {
         URL url = (URL) PARAM_FILE.lookUp(params);
         String user = (String) PARAM_USER.lookUp(params);
         String password = (String) PARAM_PASSWD.lookUp(params);
 
         // it is immutable and cannot be modified
-        final DataStore dataStore = new PGDBDataStore(DataUtilities.urlToFile(url), user, password);
+        final DataStore dataStore = new PGDBDataStore(URLs.urlToFile(url), user, password);
         return dataStore;
     }
 
-    public DataStore createNewDataStore(Map<String, Serializable> params) throws IOException {
+    @Override
+    public DataStore createNewDataStore(Map<String, ?> map) {
         return null;
     }
-
 }

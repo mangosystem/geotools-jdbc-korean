@@ -20,21 +20,21 @@ import java.io.File;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DriverManager;
-import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
-import java.util.Collections;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
-import org.geotools.data.AbstractDataStore;
 import org.geotools.data.FeatureReader;
-import org.geotools.data.Query;
-import org.geotools.data.simple.SimpleFeatureSource;
-import org.geotools.geometry.jts.ReferencedEnvelope;
+import org.geotools.data.store.ContentDataStore;
+import org.geotools.data.store.ContentEntry;
+import org.geotools.data.store.ContentFeatureSource;
+import org.geotools.feature.NameImpl;
 import org.geotools.util.logging.Logging;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
+import org.opengis.feature.type.Name;
 
 /**
  * ESRI Personal Geodatabase DataStore
@@ -44,7 +44,7 @@ import org.opengis.feature.simple.SimpleFeatureType;
  * @see
  * 
  */
-public class PGDBDataStore extends AbstractDataStore {
+public class PGDBDataStore extends ContentDataStore {
     protected static final Logger LOGGER = Logging.getLogger(PGDBDataStore.class);
 
     Connection cx;
@@ -58,7 +58,7 @@ public class PGDBDataStore extends AbstractDataStore {
     PGDBSchemaReader sr;
 
     public PGDBDataStore(File pgdbFile, String user, String password) {
-        super(false);
+        super();
 
         this.pgdbFile = pgdbFile;
         this.user = user;
@@ -66,72 +66,9 @@ public class PGDBDataStore extends AbstractDataStore {
         this.sr = new PGDBSchemaReader(getConnection());
     }
 
-    @Override
-    public String[] getTypeNames() throws IOException {
-        return sr.getSchemas().keySet().toArray(new String[sr.getSchemas().size()]);
-    }
-
-    @Override
-    public SimpleFeatureType getSchema(String typeName) throws IOException {
-        GDBSchema gdbSchema = sr.getSchemas().get(typeName);
-        if (gdbSchema == null) {
-            throw new IOException(typeName + " does not exist!");
-        }
-
-        if (gdbSchema.getSchema() == null) {
-            sr.buildFeatureType(gdbSchema);
-        }
-        return gdbSchema.getSchema();
-    }
-
-    @Override
-    protected ReferencedEnvelope getBounds(Query query) throws IOException {
-        GDBSchema gdbSchema = sr.getSchemas().get(query.getTypeName());
-        if (gdbSchema == null) {
-            throw new IOException(query.getTypeName() + " does not exist!");
-        }
-        return gdbSchema.getExtent();
-    }
-
-    @Override
-    protected int getCount(Query query) throws IOException {
-        GDBSchema gdbSchema = sr.getSchemas().get(query.getTypeName());
-        if (gdbSchema == null) {
-            throw new IOException(query.getTypeName() + " does not exist!");
-        }
-
-        Statement stmt = null;
-        ResultSet rs = null;
-        try {
-            String sql = "SELECT COUNT(*) FROM \"" + JdbcUtilities.toAccess(query.getTypeName())
-                    + "\"";
-            stmt = getConnection().createStatement();
-            rs = stmt.executeQuery(sql);
-            if (rs.next()) {
-                return rs.getInt(1);
-            }
-        } catch (SQLException e) {
-            LOGGER.log(Level.FINER, e.getMessage(), e);
-        } finally {
-            JdbcUtilities.closeSafe(rs, stmt);
-        }
-        return -1;
-    }
-
-    @Override
     protected FeatureReader<SimpleFeatureType, SimpleFeature> getFeatureReader(String typeName)
             throws IOException {
         return new PGDBFeatureReader(getConnection(), getSchema(typeName));
-    }
-
-    @Override
-    public SimpleFeatureSource getFeatureSource(final String typeName) {
-        try {
-            return new PGDBFeatureSource(this, Collections.EMPTY_SET, getSchema(typeName));
-        } catch (IOException e) {
-            LOGGER.log(Level.FINER, e.getMessage(), e);
-        }
-        return null;
     }
 
     @Override
@@ -139,19 +76,31 @@ public class PGDBDataStore extends AbstractDataStore {
         JdbcUtilities.closeSafe(cx);
     }
 
-    private Connection getConnection() {
+    @Override
+    protected List<Name> createTypeNames() {
+        return sr.getSchemas().keySet().stream().map(key -> new NameImpl(key)).collect(Collectors.toList());
+    }
+
+    @Override
+    protected ContentFeatureSource createFeatureSource(ContentEntry contentEntry) throws IOException {
+        try {
+            return new PGDBFeatureSource(this, contentEntry);
+        } catch (IOException e) {
+            LOGGER.log(Level.FINER, e.getMessage(), e);
+        }
+        return null;
+    }
+
+    Connection getConnection() {
         if (cx != null) {
             return cx;
         }
 
         try {
             String path = JdbcUtilities.toAccess(pgdbFile.getPath());
-            Class.forName("sun.jdbc.odbc.JdbcOdbcDriver");
 
             StringBuffer sb = new StringBuffer();
-            sb.append("jdbc:odbc:Driver={Microsoft Access Driver (*.mdb)}");
-            sb.append(";DBQ=").append(path);
-            sb.append(";DriverID=22;READONLY=true");
+            sb.append("jdbc:ucanaccess://").append(path);
 
             java.util.Properties properties = new java.util.Properties();
             properties.put("charSet", "8859_1");
@@ -164,8 +113,6 @@ public class PGDBDataStore extends AbstractDataStore {
                 properties.put("password", JdbcUtilities.toAccess(password));
             }
             cx = DriverManager.getConnection(sb.toString(), properties);
-        } catch (ClassNotFoundException e) {
-            LOGGER.log(Level.FINE, e.getMessage(), e);
         } catch (SQLException e) {
             LOGGER.log(Level.FINE, e.getMessage(), e);
         }

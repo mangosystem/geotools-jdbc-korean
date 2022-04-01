@@ -16,7 +16,7 @@
   <artifactId>gt-jdbc-pgdb</artifactId>
   <packaging>jar</packaging>
   <name>ESRI Personal Geodatabase DataStore</name>
-  <version>21-SNAPSHOT</version>
+  <version>26.2</version>
   <description>DataStore for ESRI Personal Geodatabase.</description>
   
   <licenses>
@@ -47,7 +47,7 @@
     <repository>
       <id>osgeo</id>
       <name>Open Source Geospatial Foundation Repository</name>
-      <url>http://download.osgeo.org/webdav/geotools/</url>
+      <url>https://download.osgeo.org/webdav/geotools/</url>
       <snapshots>
         <enabled>false</enabled>
       </snapshots>
@@ -55,7 +55,7 @@
     <repository>
       <id>geosolutions</id>
       <name>GeoSolutions Repository</name>
-      <url>http://maven.geo-solutions.it</url>
+      <url>https://maven.geo-solutions.it</url>
       <snapshots>
         <enabled>false</enabled>
       </snapshots>
@@ -63,7 +63,7 @@
     <repository>
       <id>maven-restlet</id>
       <name>Restlet Maven Repository</name>
-      <url>http://maven.restlet.org</url>
+      <url>https://maven.restlet.org</url>
       <snapshots>
         <enabled>false</enabled>
       </snapshots>
@@ -98,11 +98,6 @@
     </dependency>
     <dependency>
       <groupId>org.geotools</groupId>
-      <artifactId>gt-data</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.geotools</groupId>
       <artifactId>gt-jdbc</artifactId>
       <version>${project.version}</version>
     </dependency>
@@ -115,6 +110,11 @@
       <groupId>commons-io</groupId>
       <artifactId>commons-io</artifactId>
       <version>2.1</version>
+    </dependency>
+    <dependency>
+      <groupId>net.sf.ucanaccess</groupId>
+      <artifactId>ucanaccess</artifactId>
+      <version>5.0.1</version>
     </dependency>
     <dependency>
       <groupId>junit</groupId>

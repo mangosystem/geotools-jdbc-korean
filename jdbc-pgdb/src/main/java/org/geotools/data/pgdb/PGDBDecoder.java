@@ -25,13 +25,13 @@ import org.geotools.data.shapefile.shp.MultiLineHandler;
 import org.geotools.data.shapefile.shp.MultiPointHandler;
 import org.geotools.data.shapefile.shp.PolygonHandler;
 import org.geotools.data.shapefile.shp.ShapeType;
-import org.geotools.factory.GeoTools;
 import org.geotools.geometry.jts.JTSFactoryFinder;
+import org.geotools.util.factory.GeoTools;
 import org.geotools.util.logging.Logging;
 
-import com.vividsolutions.jts.geom.CoordinateSequence;
-import com.vividsolutions.jts.geom.Geometry;
-import com.vividsolutions.jts.geom.GeometryFactory;
+import org.locationtech.jts.geom.CoordinateSequence;
+import org.locationtech.jts.geom.Geometry;
+import org.locationtech.jts.geom.GeometryFactory;
 
 /**
  * Geometry Decoder for ESRI Personal Geodatabase
