@@ -26,18 +26,18 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.geotools.data.FeatureReader;
-import org.geotools.factory.GeoTools;
 import org.geotools.feature.simple.SimpleFeatureBuilder;
 import org.geotools.geometry.jts.JTSFactoryFinder;
 import org.geotools.util.Converters;
+import org.geotools.util.factory.GeoTools;
 import org.geotools.util.logging.Logging;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
 import org.opengis.feature.type.AttributeDescriptor;
 import org.opengis.feature.type.GeometryDescriptor;
 
-import com.vividsolutions.jts.geom.Geometry;
-import com.vividsolutions.jts.geom.GeometryFactory;
+import org.locationtech.jts.geom.Geometry;
+import org.locationtech.jts.geom.GeometryFactory;
 
 /**
  * ESRI Personal Geodatabase FeatureReader
@@ -80,8 +80,8 @@ public class PGDBFeatureReader implements FeatureReader<SimpleFeatureType, Simpl
 
     private void queryLayer() {
         try {
-            String sql = "SELECT * FROM \"";
-            sql += JdbcUtilities.toAccess(schema.getTypeName()) + "\"";
+            String sql = "SELECT * FROM ";
+            sql += JdbcUtilities.toAccess(schema.getTypeName());
             stmt = cx.createStatement();
             rs = stmt.executeQuery(sql);
         } catch (SQLException e) {
