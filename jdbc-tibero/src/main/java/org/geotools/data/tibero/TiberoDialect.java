@@ -65,6 +65,30 @@ public class TiberoDialect extends BasicSQLDialect {
 
     Version version;
 
+    // for compatibility
+    boolean isOldDBVersion = false;
+
+    private static final String SYS_GIS = "SYSGIS";
+
+    // gis view/table
+    private enum GisTable {
+        // spatial ref sys metadata
+        SPATIAL_REF_SYS_BASE,
+        SPATIAL_REF_SYS,
+
+        // geometry columns metadata
+        GEOMETRY_COLUMNS_BASE,
+        GEOMETRY_COLUMNS,
+        ALL_GEOMETRY_COLUMNS,
+        USER_GEOMETRY_COLUMNS,
+
+        // units of measure
+        UNITS_OF_MEASURE,
+        AREA_UNITS,
+        DIST_UNITS,
+        ANGLE_UNITS;
+    }
+
     @SuppressWarnings({ "rawtypes", "serial" })
     final static Map<String, Class> TYPE_TO_CLASS_MAP = new HashMap<String, Class>() {
         {
@@ -130,33 +154,49 @@ public class TiberoDialect extends BasicSQLDialect {
     @Override
     public void initializeConnection(Connection cx) throws SQLException {
         super.initializeConnection(cx);
+
+        /**
+         * as DB version upgraded,
+         * SYSGIS.GEOMETRY_COLUMNS_BASE table
+         * and F_GEOMETRY_TYPE column of SYSGIS.ALL_GEOMETRY_COLUMNS view
+         * was deleted
+         */
+        isOldDBVersion = doesTableExist(cx, SYS_GIS, GisTable.GEOMETRY_COLUMNS_BASE.name())
+                && doesColumnExist(cx, SYS_GIS, GisTable.ALL_GEOMETRY_COLUMNS.name(), "F_GEOMETRY_TYPE");
+    }
+
+    private boolean doesTableExist(Connection cx, String schemaName, String tableName) throws SQLException {
+        DatabaseMetaData metaData = cx.getMetaData();
+        try (ResultSet rs = metaData.getTables(null, schemaName, tableName, null)) {
+            return rs.next();
+        }
+    }
+
+    private boolean doesColumnExist(Connection cx, String schemaName, String tableName, String columnName) throws SQLException {
+        DatabaseMetaData metaData = cx.getMetaData();
+        try (ResultSet rs = metaData.getColumns(null, schemaName, tableName, columnName)){
+            return rs.next();
+        }
     }
 
     @Override
     public boolean includeTable(String schemaName, String tableName, Connection cx)
             throws SQLException {
-        if (tableName.equalsIgnoreCase("GEOMETRY_COLUMNS_BASE")) {
-            return false;
-        } else if (tableName.equalsIgnoreCase("SPATIAL_REF_SYS_BASE")) {
-            return false;
-        } else if (tableName.equalsIgnoreCase("GEOMETRY_COLUMNS")) {
-            return false;
-        } else if (tableName.equalsIgnoreCase("SPATIAL_REF_SYS")) {
-            return false;
-        } else if (tableName.equalsIgnoreCase("ALL_GEOMETRY_COLUMNS")) {
-            return false;
-        } else if (tableName.equalsIgnoreCase("USER_GEOMETRY_COLUMNS")) {
-            return false;
+        // check if related to gis view/table
+        for (GisTable gisTable : GisTable.values()) {
+            if (tableName.equalsIgnoreCase(gisTable.name())) {
+                return false;
+            }
         }
 
         // tables in geometry_columns
         if (schemaName == null || schemaName.isEmpty()) {
-            schemaName = "SYSGIS";
+            schemaName = SYS_GIS;
         }
 
         StringBuffer sql = new StringBuffer();
-        sql.append("SELECT F_TABLE_NAME FROM GEOMETRY_COLUMNS_BASE WHERE ");
-        sql.append(" F_TABLE_SCHEMA = '").append(schemaName).append("' ");
+        sql.append("SELECT F_TABLE_NAME FROM ").append(GisTable.GEOMETRY_COLUMNS.name());
+        sql.append(" WHERE F_TABLE_SCHEMA = '").append(schemaName).append("'");
         sql.append(" AND F_TABLE_NAME = '").append(tableName).append("'");
 
         Statement statement = null;
@@ -257,9 +297,9 @@ public class TiberoDialect extends BasicSQLDialect {
             GeometryDescriptor att = featureType.getGeometryDescriptor();
             String geometryField = att.getName().getLocalPart();
 
-            // ==================Support: Tibero 5======================
+            // ===================Support: Tibero 5, 6, 7========================
             // SELECT MIN(ST_MINX(OBJ)), MIN(ST_MINY(OBJ)), MAX(ST_MAXX(OBJ)), MAX(ST_MAXY(OBJ)) FROM ROAD;
-            // =========================================================
+            // ==================================================================
 
             StringBuffer sql = new StringBuffer();
             sql.append("SELECT ");
@@ -267,9 +307,7 @@ public class TiberoDialect extends BasicSQLDialect {
             sql.append(", MIN(ST_MINY(\"").append(geometryField).append("\"))");
             sql.append(", MAX(ST_MAXX(\"").append(geometryField).append("\"))");
             sql.append(", MAX(ST_MAXY(\"").append(geometryField).append("\"))");
-            sql.append(" FROM \"");
-            sql.append(tableName);
-            sql.append("\"");
+            sql.append(" FROM \"").append(tableName).append("\"");
 
             rs = st.executeQuery(sql.toString());
             if (rs.next()) {
@@ -330,7 +368,7 @@ public class TiberoDialect extends BasicSQLDialect {
 
         String gType = null;
         if ("geometry".equalsIgnoreCase(typeName)) {
-            gType = lookupGeometryType(columnMetaData, cx, "geometry_columns", "f_geometry_column");
+            gType = lookupGeometryType(columnMetaData, cx, GisTable.GEOMETRY_COLUMNS.name(), "F_GEOMETRY_COLUMN");
         } else {
             return null;
         }
@@ -361,7 +399,9 @@ public class TiberoDialect extends BasicSQLDialect {
         ResultSet result = null;
 
         try {
-            String sqlStatement = "SELECT F_GEOMETRY_TYPE FROM " + gTableName + " WHERE " //
+            String typeStr = (isOldDBVersion)? "F_GEOMETRY_TYPE" : "TYPE";
+
+            String sqlStatement = "SELECT " + typeStr + " FROM " + gTableName + " WHERE " //
                     + "F_TABLE_SCHEMA = '" + schemaName + "' " //
                     + "AND F_TABLE_NAME = '" + tableName + "' " //
                     + "AND " + gColumnName + " = '" + columnName + "'";
@@ -384,13 +424,10 @@ public class TiberoDialect extends BasicSQLDialect {
     @Override
     public void handleUserDefinedType(ResultSet columnMetaData, ColumnMetadata metadata,
             Connection cx) throws SQLException {
-        String tableName = columnMetaData.getString("TABLE_NAME");
-        String columnName = columnMetaData.getString("COLUMN_NAME");
         String schemaName = columnMetaData.getString("TABLE_SCHEM");
 
-        String sql = "SELECT udt_name FROM information_schema.columns " + " WHERE table_schema = '"
-                + schemaName + "' " + " AND table_name = '" + tableName + "' "
-                + " AND column_name = '" + columnName + "' ";
+        String sql = "SELECT type_name FROM all_types " + " WHERE owner = '" + schemaName;
+
         LOGGER.fine(sql);
 
         Statement st = cx.createStatement();
@@ -490,6 +527,10 @@ public class TiberoDialect extends BasicSQLDialect {
     public String getSequenceForColumn(String schemaName, String tableName, String columnName,
             Connection cx) throws SQLException {
         return "seq_" + tableName + "_" + columnName;
+    }
+
+    private String getSpatialIdxName(String tableName, String columnName) {
+        return "SPATIAL_" + tableName + "_" + columnName;
     }
 
     @Override
@@ -636,6 +677,8 @@ public class TiberoDialect extends BasicSQLDialect {
                 if (att instanceof GeometryDescriptor) {
                     GeometryDescriptor gd = (GeometryDescriptor) att;
 
+                    String columnName = gd.getLocalName();
+
                     // lookup or reverse engineer the srid
                     int srid = 101; // default value
 
@@ -654,7 +697,7 @@ public class TiberoDialect extends BasicSQLDialect {
                         }
                     }
 
-                    // assume 2 dimensions, but ease future customisation
+                    // assume 2 dimensions, but ease future customization
                     int dimensions = 2;
                     if (gd.getUserData().get(Hints.COORDINATE_DIMENSION) != null) {
                         dimensions = (Integer) gd.getUserData().get(Hints.COORDINATE_DIMENSION);
@@ -666,34 +709,46 @@ public class TiberoDialect extends BasicSQLDialect {
                         geomType = "GEOMETRY";
                     }
 
-                    // register the geometry type, first remove and eventual
-                    // leftover, then write out the real one
-                    String sql = "DELETE FROM GEOMETRY_COLUMNS_BASE" + " WHERE F_TABLE_SCHEMA = '"
-                            + schemaName + "'" //
-                            + " AND F_TABLE_NAME = '" + tableName + "'" //
-                            + " AND F_GEOMETRY_COLUMN = '" + gd.getLocalName() + "'";
+                    String sql = "";
+                    if (isOldDBVersion) {
+                        // register the geometry type, first remove and eventual
+                        // leftover, then write out the real one
+                        sql = "DELETE FROM " + SYS_GIS + "." + GisTable.GEOMETRY_COLUMNS_BASE.name() //
+                                + " WHERE F_TABLE_SCHEMA = '" + schemaName + "'" //
+                                + " AND F_TABLE_NAME = '" + tableName + "'" //
+                                + " AND F_GEOMETRY_COLUMN = '" + columnName + "'";
+                        LOGGER.fine(sql);
+                        st.execute(sql);
 
-                    LOGGER.fine(sql);
-                    st.execute(sql);
+                        sql = "INSERT INTO " + SYS_GIS + "." + GisTable.GEOMETRY_COLUMNS_BASE.name() + " VALUES (" //
+                                + "'" + schemaName + "'," //
+                                + "'" + tableName + "'," //
+                                + "'" + columnName + "'," //
+                                + dimensions + "," //
+                                + srid + "," //
+                                + "'" + geomType + "', '')";
+                        LOGGER.fine(sql);
+                        st.execute(sql);
+                    }
 
-                    sql = "INSERT INTO GEOMETRY_COLUMNS_BASE VALUES (" //
-                            + "'" + schemaName + "'," //
-                            + "'" + tableName + "'," //
-                            + "'" + gd.getLocalName() + "'," //
-                            + dimensions + "," //
-                            + srid + "," //
-                            + "'" + geomType + "', '')";
+                    // drop spatial index
+                    // DROP INDEX INDEX_NAME;
+                    String idxName = getSpatialIdxName(tableName, columnName);
+                    sql = "DROP INDEX \"" + idxName + "\"";
                     LOGGER.fine(sql);
-                    st.execute(sql);
+                    try {
+                        st.execute(sql);
+                    } catch (Exception e) {
+                        LOGGER.fine(e.getMessage());
+                    }
 
                     // add the spatial index
                     // CREATE INDEX IDX_STORES_GEOMETRY ON SYSGIS.STORES("the_geom") RTREE;
-                    sql = "CREATE INDEX \"SPATIAL_" + tableName //
-                            + "_" + gd.getLocalName() + "\""//
+                    sql = "CREATE INDEX \"" + idxName + "\"" //
                             + " ON " //
                             + "\"" + tableName + "\"" //
                             + " (" //
-                            + "\"" + gd.getLocalName() + "\"" //
+                            + "\"" + columnName + "\"" //
                             + ") RTREE";
                     LOGGER.fine(sql);
                     st.execute(sql);
@@ -701,6 +756,7 @@ public class TiberoDialect extends BasicSQLDialect {
                     // create sequence
                     String sequenceName = getSequenceForColumn(schemaName, tableName, "fid", cx);
                     sql = "DROP SEQUENCE \"" + sequenceName + "\"";
+                    LOGGER.fine(sql);
                     try {
                         st.execute(sql);
                     } catch (Exception e) {
@@ -710,8 +766,8 @@ public class TiberoDialect extends BasicSQLDialect {
                     // CREATE SEQUENCE seq_building_fid START WITH 1 INCREMENT BY 1 MINVALUE 1
                     // NOMAXVALUE
                     // INSERT INTO SEQTBL VALUES(seq1.NEXTVAL);
-                    sql = "CREATE SEQUENCE \"" + sequenceName
-                            + "\" START WITH 1 INCREMENT BY 1 MINVALUE 1 NOMAXVALUE";
+                    sql = "CREATE SEQUENCE \"" + sequenceName + "\"" //
+                            + " START WITH 1 INCREMENT BY 1 MINVALUE 1 NOMAXVALUE";
                     LOGGER.fine(sql);
                     st.execute(sql);
                 }
@@ -726,13 +782,17 @@ public class TiberoDialect extends BasicSQLDialect {
     public void postDropTable(String schemaName, SimpleFeatureType featureType, Connection cx)
             throws SQLException {
         Statement st = cx.createStatement();
+
         try {
-            String tableName = featureType.getTypeName();
-            // remove all the geometry_column entries
-            String sql = "DELETE FROM GEOMETRY_COLUMNS_BASE" + " WHERE F_TABLE_SCHEMA = '"
-                    + schemaName + "'" + " AND F_TABLE_NAME = '" + tableName + "'";
-            LOGGER.fine(sql);
-            st.execute(sql);
+            if (isOldDBVersion) {
+                String tableName = featureType.getTypeName();
+                // remove all the geometry_column entries
+                String sql = "DELETE FROM " + SYS_GIS + "." + GisTable.GEOMETRY_COLUMNS_BASE.name() //
+                        + " WHERE F_TABLE_SCHEMA = '" + schemaName + "'" //
+                        + " AND F_TABLE_NAME = '" + tableName + "'";
+                LOGGER.fine(sql);
+                st.execute(sql);
+            }
         } finally {
             dataStore.closeSafe(st);
         }
@@ -771,16 +831,16 @@ public class TiberoDialect extends BasicSQLDialect {
         // see http://progcookbook.blogspot.com/2006/02/using-rownum-properly-for-pagination.html
         // and http://www.oracle.com/technology/oramag/oracle/07-jan/o17asktom.html
         // to understand why we are going thru such hoops in order to get it working
-        // The same techinique is used in Hibernate to support pagination
+        // The same technique is used in Hibernate to support pagination
 
         if (offset == 0) {
             sql.insert(0, "SELECT * FROM (");
-            sql.append(") WHERE ROWNUM <= " + limit);
+            sql.append(") WHERE ROWNUM <= ").append(limit);
         } else {
             long max = (limit == Integer.MAX_VALUE ? Long.MAX_VALUE : limit + offset);
             sql.insert(0, "SELECT * FROM (SELECT A.*, ROWNUM RNUM FROM ( ");
-            sql.append(") A WHERE ROWNUM <= " + max + ")");
-            sql.append("WHERE RNUM > " + offset);
+            sql.append(") A WHERE ROWNUM <= ").append(max).append(")");
+            sql.append("WHERE RNUM > ").append(offset);
         }
     }
 
