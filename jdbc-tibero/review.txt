@@ -1,14 +1,14 @@
 ================================================
 티베로 설치 후 SYSGIS에서 사용하는 법
-Tibero_6_FS06_win_64_20170310.exe
 ================================================
+
 최초 접속시 SYS로 접속하여 다음과 같이 SYSGIS 계정의 비밀번호를 설정한다.
    > tbsql sys/tibero
 SQL> ALTER USER SYSGIS IDENTIFIED BY tibero;
-
    > tbsql sysgis/tibero
+
 만약 다른 사용자에서 Spatial Extension을 사용하려면 다음의 sql문을 실행한다.
-"C:\Tibero\tibero5\scripts\create_gis.sql"
+"$TB_HOME\scripts\create_gis.sql"
 
 tibero_spatial_ref_sys_base.sql 문을 실행한다.
 기본 사용자의 테이블이  "SYSGIS"."SPATIAL_REF_SYS_BASE" 이므로 SYSGIS 사용자가 아닐 경우 수정해서 사용
@@ -18,6 +18,7 @@ select count(*) from "admin_sgg" where ST_Intersects("the_geom", st_geomfromtext
 
 
 테이블 생성 예 - road
+
 DELETE FROM GEOMETRY_COLUMNS_BASE WHERE F_TABLE_SCHEMA = 'SYSGIS' AND F_TABLE_NAME = 'road' AND F_GEOMETRY_COLUMN = 'the_geom'
 INSERT INTO GEOMETRY_COLUMNS_BASE VALUES ('SYSGIS','road','the_geom',2,5174,'MULTILINESTRING', '')
 
@@ -39,22 +40,57 @@ SELECT count(*) FROM "SYSGIS"."road" WHERE ST_Intersects("the_geom", ST_GEOMFROM
 
 SELECT count(*) FROM "SYSGIS"."road" WHERE  ST_Distance("the_geom",ST_GEOMFROMTEXT('POINT (193825.86844999995 444954.60259999987)')) <= 300.0;
 
+
+※ tibero 7 이후 (또는 227917패치 및 224094패치 적용 이후) 버전의 경우
+
+
+(1) spatial_ref_sys_base update
+
+SYSGIS 계정이 아닌 다른 사용자가 Spatial Extension을 사용하려면 다음의 sql문을 실행한다.
+@$TB_HOME/scripts/create_gis.sql
+
+기본 사용자의 테이블이  "SYSGIS"."SPATIAL_REF_SYS_BASE" 이므로 SYSGIS 사용자가 아닐 경우 다음 스크립트를 수정해서 사용한다.
+@$TB_HOME/scripts/gis_register_default_srs.sql
+
+수동으로 SPATIAL_REF_SYS_BASE에 추가하기 위해서 REGISTER_SRS 프로시저를 사용할 수 있다.
+EXEC REGISTER_SRS(102001, 'ESRI', 102001, 'PROJCS["Canada_Albers_Equal_Area_Conic",GEOGCS["NAD83",DATUM["North_American_Datum_1983",SPHEROID["GRS 1980",6378137,298.257222101,AUTHORITY["EPSG","7019"]],AUTHORITY["EPSG","6269"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4269"]],PROJECTION["Albers_Conic_Equal_Area"],PARAMETER["latitude_of_center",40],PARAMETER["longitude_of_center",-96],PARAMETER["standard_parallel_1",50],PARAMETER["standard_parallel_2",70],PARAMETER["false_easting",0],PARAMETER["false_northing",0],UNIT["metre",1,AUTHORITY["EPSG","9001"]],AXIS["Easting",EAST],AXIS["Northing",NORTH],AUTHORITY["ESRI","102001"]]', '+proj=aea +lat_0=40 +lon_0=-96 +lat_1=50 +lat_2=70 +x_0=0 +y_0=0 +datum=NAD83 +units=m +no_defs +type=crs');
+
+SPATIAL_REF_SYS_BASE에 정보를 삭제하기 위해서 UNREGISTER_SRS 프로시저를 사용할 수 있다.
+EXEC UNREGISTER_SRS('ESRI', 102001);
+
+
+(2) 테이블 생성 예 - road
+
+CREATE TABLE "ROAD" (ID NUMBER, GEOM GEOMETRY);
+ALTER TABLE "ROAD" ADD CONSTRAINTS "ROAD_GEOM_TYPE" CHECK (ST_GEOMETRYTYPE(GEOM) = 'MULTILINESTRING');
+ALTER TABLE "ROAD" ADD CONSTRAINTS "ROAD_GEOM_SRID" CHECK (ST_SRID(GEOM) = 4326);
+INSERT INTO "ROAD" (ID, GEOM) VALUES (1, ST_GEOMFROMTEXT('MULTILINESTRING ((193908.37799999956 445507.9530999996, 193899.96140000038 445682.7842999995))', 4326));
+
+
+(3) feature 조회
+
+SELECT TYPE FROM USER_GEOMETRY_COLUMNS WHERE F_TABLE_NAME = 'ROAD' AND F_GEOMETRY_COLUMN = 'GEOM';
+SELECT GEOMETRY_TYPE FROM USER_GEOMETRY_COLUMNS WHERE F_TABLE_NAME = 'ROAD' AND F_GEOMETRY_COLUMN = 'GEOM';
+
+각 번호에 해당하는 타입은 다음과 같다.
+0 - GEOMETRY
+1 - POINT
+2 - LINESTRING
+3 - POLYGON
+4 - MULTIPOINT
+5 - MULTILINESTRING
+6 - MULTIPOLYGON
+7 - GEOMETRYCOLLECTION
+
+SELECT SRID FROM USER_GEOMETRY_COLUMNS WHERE F_TABLE_NAME = 'ROAD' AND F_GEOMETRY_COLUMN = 'GEOM';
+SELECT COORD_DIMENSION FROM USER_GEOMETRY_COLUMNS WHERE F_TABLE_NAME = 'ROAD' AND F_GEOMETRY_COLUMN = 'GEOM';
+
+
 ================================================
 티베로 서비스 시작시 오류
 ================================================
 > tbdown clean
 
-================================================
-import shapefile
-================================================
-Tibero 4에서 gisLoader는 linux에만 사용할 수 있으나, 5 버전부터는 Windows 가능
-http://technet.tmax.co.kr/kr/inquiry/qna/tibero/readBoardForm.do?bbsCode=qna_tibero&fc=inquiry&sc=inquiry_qna&tc=inquiry_qna_tibero&currentPage=1&seqNo=49602&categoryId=&productCode=&range=10&searchType=ALL&searchText=GIS
-
-gisLoader seoul_pop_flow.shp seoul_pop_flow
-tbloader userid=tibero/manager control=seoul_pop_flow.ctl
-
-gisloader FishnetOp.shp fishnet
-tbloader userid=tibero/manager control=FishnetOp.ctl
 
 ================================================
 geotools  TiberoNGDataStoreFactory
